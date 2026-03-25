@@ -1,6 +1,6 @@
 # Navimow for Homebridge
 
-![Navimow icon](https://raw.githubusercontent.com/LeiterConsulting/navimowhb/main/homebridge-ui/public/navimow-icon.svg)
+![Navimow icon](https://raw.githubusercontent.com/LeiterConsulting/navimowhb/main/brand/navimow-square.svg)
 
 Homebridge plugin for viewing and controlling Segway Navimow mowers from HomeKit.
 

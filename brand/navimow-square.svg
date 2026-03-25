@@ -40,6 +40,7 @@
       <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_1_1" result="shape"/>
     </filter>
   </defs>
+  <rect width="512" height="512" rx="96" fill="#F7F5EE"/>
   <g filter="url(#shadow)">
     <path d="M64 366C93 343 118 333 144 330C185 325 222 334 262 345C304 357 341 359 392 346C410 341 426 338 445 338C418 348 394 365 368 388C341 412 303 424 252 424C190 424 130 405 64 366Z" fill="#2A6E19"/>
     <path d="M72 353C104 331 129 323 157 321C195 319 232 328 271 339C315 352 355 352 417 335L435 337C412 346 391 360 361 379C323 403 285 414 244 414C179 414 122 393 72 353Z" fill="url(#grass)"/>
