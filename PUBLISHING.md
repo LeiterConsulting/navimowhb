@@ -15,6 +15,7 @@ That means:
 - publishing to npm is the correct step if you want the plugin card author to populate
 - publishing to npm alone will not make the main Plugins card use a custom Navimow icon
 - the custom plugin UI branding in `homebridge-ui/` remains fully under this repository's control
+- GitHub-facing docs should use the committed PNG branding asset instead of the SVG path when exact artwork fidelity matters
 
 ## Pre-Publish Checklist
 
