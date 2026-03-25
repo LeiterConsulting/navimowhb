@@ -240,6 +240,24 @@
     line-height: 1.5;
   }
 
+  .verification-card {
+    display: none;
+    margin: 1rem 0 0;
+    padding: 1rem;
+    border-radius: 16px;
+    background: rgba(114, 156, 90, 0.12);
+    border: 1px solid rgba(72, 97, 63, 0.18);
+  }
+
+  .verification-card p {
+    margin: 0;
+  }
+
+  .verification-card .panel-actions {
+    margin: 0.85rem 0 0;
+    justify-content: flex-start;
+  }
+
   .support-list a {
     color: var(--navimow-moss);
     font-weight: 600;
@@ -395,6 +413,13 @@
     </div>
 
     <p id="authMessage" class="mb-3">Checking current auth state.</p>
+
+    <div id="configVerificationCard" class="verification-card">
+      <p id="configVerificationMessage" class="muted">An existing Navimow configuration was loaded. Review the settings below, then confirm that they are still correct.</p>
+      <div class="panel-actions">
+        <button type="button" class="btn btn-primary" id="confirmExistingConfig">This configuration is correct</button>
+      </div>
+    </div>
 
     <ol class="muted" style="padding-left: 1.2rem;">
       <li>Open the Navimow sign-in page from here.</li>
@@ -561,6 +586,9 @@
     const refreshDevicesButton = document.getElementById('refreshDevices')
     const authPrimaryButton = document.getElementById('authPrimary')
     const authRefreshButton = document.getElementById('authRefresh')
+    const configVerificationCard = document.getElementById('configVerificationCard')
+    const configVerificationMessage = document.getElementById('configVerificationMessage')
+    const confirmExistingConfigButton = document.getElementById('confirmExistingConfig')
     const DEVICE_REFRESH_INTERVAL_MS = 5000
     const browserBaseUrl = window.location.origin
 
@@ -569,6 +597,7 @@
     let deviceRefreshTimer = null
     let authState = null
     let pluginConfig = null
+    let existingConfigConfirmed = false
     let pendingConfigSaveAfterAuth = false
 
     const setVisible = (id, visible, display = '') => {
@@ -862,6 +891,18 @@
       return configBlock
     }
 
+    const syncConfigVerificationPrompt = status => {
+      const shouldPrompt = Boolean(status.hasConfig && !pendingConfigSaveAfterAuth && !existingConfigConfirmed)
+      configVerificationCard.style.display = shouldPrompt ? 'block' : 'none'
+      if (!shouldPrompt) {
+        return
+      }
+
+      configVerificationMessage.textContent = status.state === 'connected'
+        ? 'Your saved Navimow configuration was loaded. Review the settings form below, then confirm that these values are still correct.'
+        : 'An existing Navimow configuration was loaded. Review the settings form below, then confirm that these values are still correct.'
+    }
+
     const ensureConfigBlockIsStaged = async status => {
       if (status.hasConfig || (!status.hasToken && !status.hasCachedAccessories)) {
         return status
@@ -908,7 +949,27 @@
         noDevicesMessage.textContent = 'No mowers are available yet. Connect your Navimow account, then refresh this page.'
       }
 
+      syncConfigVerificationPrompt(status)
+
       homebridge.fixScrollHeight?.()
+    }
+
+    const confirmExistingConfiguration = async () => {
+      confirmExistingConfigButton.disabled = true
+      confirmExistingConfigButton.textContent = 'Saving configuration...'
+
+      try {
+        await persistConfigBlock(false)
+        await homebridge.savePluginConfig()
+        existingConfigConfirmed = true
+        homebridge.enableSaveButton?.()
+        await getStoredConfigBlock()
+        await refreshAuthStatus(false)
+        homebridge.toast.success('The loaded Navimow configuration was saved and confirmed.', 'Configuration Confirmed')
+      } finally {
+        confirmExistingConfigButton.disabled = false
+        confirmExistingConfigButton.textContent = 'This configuration is correct'
+      }
     }
 
     const refreshAuthStatus = async (showSpinner = true) => {
@@ -984,6 +1045,11 @@
       authRefreshButton.addEventListener('click', () => {
         refreshAuthStatus(true).catch(error => {
           homebridge.toast.error(error.message, 'Error')
+        })
+      })
+      confirmExistingConfigButton.addEventListener('click', () => {
+        confirmExistingConfiguration().catch(error => {
+          homebridge.toast.error(error.message, 'Save Failed')
         })
       })
       settingsButton.addEventListener('click', showSettings)
