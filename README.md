@@ -1,6 +1,6 @@
 # Navimow for Homebridge
 
-![Navimow icon](https://raw.githubusercontent.com/LeiterConsulting/navimowhb/main/brand/navimow-square.svg)
+![Navimow icon](https://raw.githubusercontent.com/LeiterConsulting/navimowhb/main/homebridge-ui/public/navimow-icon.svg)
 
 See and control your Segway Navimow mowers from Homebridge and HomeKit.
 
@@ -71,8 +71,6 @@ npm publish --dry-run
 * Repository: https://github.com/LeiterConsulting/navimowhb
 * Issues: https://github.com/LeiterConsulting/navimowhb/issues
 * Release checklist: `PUBLISHING.md`
-* Branding assets: `brand/`
-* Homebridge plugins issue draft: `HOMEBRIDGE-PLUGINS-ISSUE.md`
 
 ## Homebridge Configuration
 

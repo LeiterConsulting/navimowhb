@@ -15,8 +15,6 @@ That means:
 - publishing to npm is the correct step if you want the plugin card author to populate
 - publishing to npm alone will not make the main Plugins card use a custom Navimow icon
 - the custom plugin UI branding in `homebridge-ui/` remains fully under this repository's control
-- images shipped with this plugin should live in `homebridge-ui/public/` and be referenced there by relative path, which is the documented Homebridge custom UI asset location
-- reusable repository branding assets now live in `brand/` so README, release notes, and issue submissions can share the same artwork
 
 ## Pre-Publish Checklist
 
@@ -88,11 +86,4 @@ Items to handle outside this repository before requesting verification:
 - publish the package to npm
 - create GitHub releases with release notes for published versions
 - verify the plugin works cleanly on the Homebridge and Node.js versions you plan to support
-- if you want a custom icon on the main Homebridge Plugins page, pursue the Homebridge verified/plugin-list path by opening an issue with the Homebridge plugins project after verification eligibility is in place
-
-## Branding Assets
-
-- `brand/navimow-square.svg`: square logo for README and icon submissions
-- `brand/navimow-banner.svg`: wide banner for GitHub releases and repository visuals
-- `brand/navimow-social-card.svg`: social preview graphic for link cards and announcements
-- `HOMEBRIDGE-PLUGINS-ISSUE.md`: copy-ready issue body for the Homebridge plugins project
+- if you want a custom icon on the main Homebridge Plugins page, pursue the Homebridge verified/plugin-list path
