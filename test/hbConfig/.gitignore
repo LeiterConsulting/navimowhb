@@ -1,0 +1,5 @@
+accessories/
+persist/
+auth.json
+*.db
+*.db-*

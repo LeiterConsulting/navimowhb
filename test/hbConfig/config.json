@@ -1,0 +1,16 @@
+{
+  "bridge": {
+    "name": "Navimow Dev Bridge",
+    "username": "0E:82:75:AA:BB:CC",
+    "port": 51826,
+    "pin": "031-45-154"
+  },
+  "accessories": [],
+  "platforms": [
+    {
+      "name": "Navimow",
+      "platform": "NavimowPlatform",
+      "updateIntervalSeconds": 30
+    }
+  ]
+}

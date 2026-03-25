@@ -48,10 +48,34 @@ Install Node dependencies:
 npm install
 ```
 
+Run the local validation checks used before publishing:
+
+```bash
+npm run check
+```
+
 Build the plugin:
 
 ```bash
 npm run build
+```
+
+Lint the TypeScript sources:
+
+```bash
+npm run lint
+```
+
+Start a local Homebridge instance against the repository:
+
+```bash
+npm run start:debug
+```
+
+Watch source files and restart Homebridge automatically during development:
+
+```bash
+npm run watch
 ```
 
 Package it for installation into another Homebridge host:
@@ -65,6 +89,10 @@ Prepare and validate an npm release locally:
 ```bash
 npm publish --dry-run
 ```
+
+If you want to test against a local Homebridge installation, install or link the package after a successful `npm run check`.
+
+The local development Homebridge data directory lives under `test/hbConfig/`, so cached accessories, tokens, and other state stay scoped to this repository.
 
 ## Project Links
 
@@ -148,6 +176,28 @@ Key paths in this repository:
 * `src/`: Homebridge platform, accessories, and bridge client
 * `homebridge-ui/`: custom Homebridge plugin UI
 * `config.schema.json`: Homebridge form schema
+* `eslint.config.mjs`: repository lint rules for TypeScript sources
+* `nodemon.json`: local watch and restart workflow for Homebridge development
+* `test/hbConfig/`: local Homebridge storage and example config for repository development
+
+## Release Workflow
+
+Versioning commands:
+
+```bash
+npm run release:patch
+npm run release:minor
+npm run release:major
+```
+
+Recommended release flow:
+
+1. Run `npm run check`
+2. Bump the version with one of the `release:*` scripts
+3. Push the resulting commit and git tag
+4. Create the matching GitHub release from that tag
+5. Publish to npm
+6. Confirm npm is serving the new version
 
 ## Troubleshooting
 

@@ -862,6 +862,18 @@
       return configBlock
     }
 
+    const ensureConfigBlockIsStaged = async status => {
+      if (status.hasConfig || (!status.hasToken && !status.hasCachedAccessories)) {
+        return status
+      }
+
+      await persistConfigBlock(false)
+      return {
+        ...status,
+        hasConfig: true,
+      }
+    }
+
     const renderAuthStatus = status => {
       authState = status
       const appearance = statusAppearance(status.state)
@@ -907,7 +919,7 @@
       try {
         const configBlock = await getRequestConfigBlock()
         const status = await homebridge.request('/auth/status', { config: configBlock })
-        renderAuthStatus(status)
+        renderAuthStatus(await ensureConfigBlockIsStaged(status))
       } finally {
         if (showSpinner) {
           homebridge.hideSpinner()

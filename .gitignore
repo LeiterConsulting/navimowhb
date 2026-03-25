@@ -29,5 +29,12 @@ env/
 # Logs
 *.log
 
+# Local Homebridge development
+test/hbConfig/accessories/
+test/hbConfig/persist/
+test/hbConfig/auth.json
+test/hbConfig/*.db
+test/hbConfig/*.db-*
+
 # not in repo
 not_in_repo/

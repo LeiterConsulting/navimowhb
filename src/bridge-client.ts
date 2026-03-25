@@ -78,10 +78,9 @@ export class NavimowBridgeClient extends EventEmitter {
     const client = this.requireApiClient();
     const commandResponse = await client.sendCommand(deviceId, command);
     const trackedDevices = extractTrackedCommandDevices(commandResponse, deviceId);
-    let commandResults: Array<Record<string, unknown>> = [];
 
     if (trackedDevices.length) {
-      commandResults = await this.waitForCommandResults(client, trackedDevices, command);
+      const commandResults = await this.waitForCommandResults(client, trackedDevices, command);
       const deviceResult = commandResults.find((result) => String(result.id ?? '') === deviceId) ?? commandResults[0] ?? null;
       this.lastCommandResult.set(deviceId, deviceResult ? { ...deviceResult, command } : null);
     } else {

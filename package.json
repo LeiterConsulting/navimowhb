@@ -1,6 +1,6 @@
 {
   "name": "homebridge-navimow",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Homebridge platform plugin for Navimow robotic mowers with HomeKit controls, live telemetry, and a guided OAuth setup flow.",
   "displayName": "Navimow for Homebridge",
   "author": {
@@ -27,9 +27,19 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "build:watch": "tsc -p tsconfig.json --watch --preserveWatchOutput",
     "clean": "rm -rf dist",
+    "check": "npm run lint && npm run build",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
     "prepack": "npm run build",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run check",
+    "release:major": "npm version major",
+    "release:minor": "npm version minor",
+    "release:patch": "npm version patch",
+    "start": "homebridge -U ./test/hbConfig -P .",
+    "start:debug": "homebridge -D -U ./test/hbConfig -P .",
+    "watch": "nodemon --config nodemon.json"
   },
   "keywords": [
     "homebridge-plugin",
@@ -51,8 +61,13 @@
     "@homebridge/plugin-ui-utils": "^1.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@types/node": "^22.14.1",
-    "typescript": "^5.8.2"
+    "eslint": "^9.39.4",
+    "homebridge": "^1.11.3",
+    "nodemon": "^3.1.14",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.57.2"
   },
   "homebridge": {
     "pluginAlias": "NavimowPlatform",

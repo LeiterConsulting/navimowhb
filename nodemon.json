@@ -1,0 +1,16 @@
+{
+  "watch": [
+    "src",
+    "config.schema.json",
+    "homebridge-ui"
+  ],
+  "ext": "ts,js,json,html,css",
+  "ignore": [
+    "dist/**",
+    "node_modules/**",
+    "test/hbConfig/accessories/**",
+    "test/hbConfig/persist/**"
+  ],
+  "delay": "750",
+  "exec": "npm run build && npm run start:debug"
+}
