@@ -23,15 +23,10 @@ import type {
 } from './settings';
 
 export class NavimowBridgeClient extends EventEmitter {
-  private static readonly REALTIME_TOPICS = [
-    '/downlink/vehicle/+/realtimeDate/state',
-    '/downlink/vehicle/+/realtimeDate/event',
-    '/downlink/vehicle/+/realtimeDate/attributes',
-  ] as const;
-
   private readonly devices = new Map<string, NavimowDevice>();
   private readonly states = new Map<string, NavimowState>();
   private readonly lastCommandResult = new Map<string, Record<string, unknown> | null>();
+  private readonly realtimeSubscriptions = new Set<string>();
   private apiClient?: NavimowApiClient;
   private mqttClient?: MqttClient;
   private pollTimer?: NodeJS.Timeout;
@@ -159,6 +154,8 @@ export class NavimowBridgeClient extends EventEmitter {
 
     this.emit('devices', { devices: [...this.devices.values()] });
 
+    this.syncRealtimeSubscriptions();
+
     const states = await client.getDeviceStates(devices.map((device) => device.id), source);
     for (const [deviceId, state] of states) {
       this.storeState(deviceId, state);
@@ -209,13 +206,7 @@ export class NavimowBridgeClient extends EventEmitter {
     this.mqttClient = mqtt.connect(connection.brokerUrl, options);
     this.mqttClient.on('connect', () => {
       this.emit('status', { message: 'Navimow realtime telemetry connected.' });
-      for (const topic of NavimowBridgeClient.REALTIME_TOPICS) {
-        this.mqttClient?.subscribe(topic, (error?: Error | null) => {
-          if (error) {
-            this.log.warn(`Navimow realtime subscribe failed for ${topic}: ${error.message}`);
-          }
-        });
-      }
+      this.syncRealtimeSubscriptions();
     });
     this.mqttClient.on('message', (topic, payload) => {
       this.handleRealtimeMessage(topic, payload);
@@ -226,6 +217,52 @@ export class NavimowBridgeClient extends EventEmitter {
     this.mqttClient.on('close', () => {
       this.emit('status', { message: 'Navimow realtime telemetry disconnected; HTTP polling remains active.' });
     });
+  }
+
+  private syncRealtimeSubscriptions(): void {
+    if (!this.mqttClient?.connected) {
+      return;
+    }
+
+    const targetTopics = new Set<string>();
+    for (const deviceId of this.devices.keys()) {
+      for (const topic of buildRealtimeTopics(deviceId)) {
+        targetTopics.add(topic);
+      }
+    }
+
+    if (!targetTopics.size) {
+      for (const topic of buildRealtimeTopics('+')) {
+        targetTopics.add(topic);
+      }
+    }
+
+    for (const topic of targetTopics) {
+      if (this.realtimeSubscriptions.has(topic)) {
+        continue;
+      }
+      this.mqttClient.subscribe(topic, (error?: Error | null) => {
+        if (error) {
+          this.log.warn(`Navimow realtime subscribe failed for ${topic}: ${error.message}`);
+          return;
+        }
+        this.realtimeSubscriptions.add(topic);
+        this.log.info(`Navimow realtime subscribed to ${topic}`);
+      });
+    }
+
+    for (const topic of [...this.realtimeSubscriptions]) {
+      if (targetTopics.has(topic)) {
+        continue;
+      }
+      this.mqttClient.unsubscribe(topic, (error?: Error | null) => {
+        if (error) {
+          this.log.warn(`Navimow realtime unsubscribe failed for ${topic}: ${error.message}`);
+          return;
+        }
+        this.realtimeSubscriptions.delete(topic);
+      });
+    }
   }
 
   private handleRealtimeMessage(topic: string, payload: Buffer): void {
@@ -283,6 +320,14 @@ export class NavimowBridgeClient extends EventEmitter {
     }
     return this.apiClient;
   }
+}
+
+function buildRealtimeTopics(deviceId: string): string[] {
+  return [
+    `/downlink/vehicle/${deviceId}/realtimeDate/state`,
+    `/downlink/vehicle/${deviceId}/realtimeDate/event`,
+    `/downlink/vehicle/${deviceId}/realtimeDate/attributes`,
+  ];
 }
 
 function mergeState(previous: NavimowState | undefined, incoming: NavimowState): NavimowState {
