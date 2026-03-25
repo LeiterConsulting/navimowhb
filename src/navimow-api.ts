@@ -63,6 +63,13 @@ type CommandResponse = {
   };
 };
 
+export interface NavimowMqttConnectionInfo {
+  brokerUrl: string;
+  password?: string;
+  username?: string;
+  websocketHeaders?: Record<string, string>;
+}
+
 export class AuthRequiredError extends Error {
   constructor(message = 'Navimow authentication required. Open the plugin settings page and connect your account.') {
     super(message);
@@ -236,6 +243,62 @@ export class NavimowApiClient {
     return result;
   }
 
+  async getMqttConnectionInfo(): Promise<NavimowMqttConnectionInfo | null> {
+    const response = await this.request<Record<string, unknown>>('GET', '/openapi/mqtt/userInfo/get/v2');
+    const info = response.data ?? {};
+    const accessToken = await this.tokenStore.getAccessToken();
+    const username = stringFromPaths(info, [
+      ['userName'],
+      ['username'],
+      ['user_name'],
+    ]) ?? undefined;
+    const password = stringFromPaths(info, [
+      ['pwdInfo'],
+      ['password'],
+      ['pwd'],
+    ]) ?? undefined;
+    const mqttHost = stringFromPaths(info, [
+      ['mqttHost'],
+      ['host'],
+      ['broker'],
+    ]);
+    const mqttUrl = stringFromPaths(info, [
+      ['mqttUrl'],
+      ['wsUrl'],
+      ['websocketUrl'],
+      ['url'],
+    ]);
+    const mqttPort = numberFromPaths(info, [
+      ['mqttPort'],
+      ['port'],
+    ]);
+
+    if (mqttUrl) {
+      const websocketUrl = buildWebsocketBrokerUrl(mqttUrl, mqttHost, mqttPort);
+      if (websocketUrl) {
+        return {
+          brokerUrl: websocketUrl,
+          password,
+          username,
+          websocketHeaders: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        };
+      }
+    }
+
+    if (!mqttHost) {
+      return null;
+    }
+
+    const protocol = (mqttPort ?? 1883) === 8883 ? 'mqtts' : 'mqtt';
+    return {
+      brokerUrl: `${protocol}://${stripProtocol(mqttHost)}:${mqttPort ?? 1883}`,
+      password,
+      username,
+    };
+  }
+
   async sendCommand(deviceId: string, command: NavimowCommand): Promise<CommandResponse> {
     const execution = mapCommand(command);
     const response = await this.request<CommandResponse>('POST', '/openapi/smarthome/sendCommands', {
@@ -406,7 +469,7 @@ function normalizeDevice(device: Record<string, unknown>): NavimowDevice {
   };
 }
 
-function normalizeState(status: Record<string, unknown>, source: string): NavimowState {
+export function normalizeState(status: Record<string, unknown>, source: string): NavimowState {
   const rawState = stringFromPaths(status, [
     ['state'],
     ['status'],
@@ -601,6 +664,32 @@ function valueAtPath(record: Record<string, unknown>, path: string[]): unknown {
     current = (current as Record<string, unknown>)[segment];
   }
   return current;
+}
+
+function buildWebsocketBrokerUrl(
+  mqttUrl: string,
+  mqttHost: string | null,
+  mqttPort: number | null,
+): string | null {
+  try {
+    const parsed = new URL(mqttUrl);
+    if (parsed.protocol === 'ws:' || parsed.protocol === 'wss:') {
+      return parsed.toString();
+    }
+  } catch {
+    // The cloud sometimes returns only the websocket path; handle that below.
+  }
+
+  if (!mqttHost) {
+    return null;
+  }
+
+  const normalizedPath = mqttUrl.startsWith('/') ? mqttUrl : `/${mqttUrl}`;
+  return `wss://${stripProtocol(mqttHost)}:${mqttPort ?? 443}${normalizedPath}`;
+}
+
+function stripProtocol(value: string): string {
+  return value.replace(/^[a-z]+:\/\//i, '').replace(/\/$/, '');
 }
 
 function stringFromPaths(record: Record<string, unknown>, paths: string[][]): string | null {
