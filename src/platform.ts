@@ -13,7 +13,14 @@ import path from 'node:path';
 
 import { NavimowAccessory } from './accessory';
 import { NavimowBridgeClient } from './bridge-client';
-import { PLATFORM_NAME, PLUGIN_NAME, type NavimowDevice, type NavimowPlatformConfig } from './settings';
+import {
+  NAVIMOW_ACCESSORY_ROLES,
+  PLATFORM_NAME,
+  PLUGIN_NAME,
+  type NavimowAccessoryRole,
+  type NavimowDevice,
+  type NavimowPlatformConfig,
+} from './settings';
 
 export class NavimowPlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service;
@@ -60,7 +67,8 @@ export class NavimowPlatform implements DynamicPlatformPlugin {
       return;
     }
 
-    this.cachedAccessories.set(deviceId, accessory);
+    const role = accessory.context.role as NavimowAccessoryRole | undefined;
+    this.cachedAccessories.set(buildAccessoryKey(deviceId, role), accessory);
   }
 
   private async startBridge(): Promise<void> {
@@ -92,42 +100,65 @@ export class NavimowPlatform implements DynamicPlatformPlugin {
 
   private syncDevices(devices: NavimowDevice[]): void {
     const seenDeviceIds = new Set<string>();
+    const seenAccessoryKeys = new Set<string>();
 
     for (const device of devices) {
       seenDeviceIds.add(device.id);
-      const existingAccessory = this.cachedAccessories.get(device.id);
-      if (existingAccessory) {
-        existingAccessory.context.device = device;
-        existingAccessory.displayName = device.name;
-        const navimowAccessory = this.accessories.get(device.id);
-        if (navimowAccessory) {
-          navimowAccessory.updateDevice(device);
-        } else {
-          this.accessories.set(device.id, new NavimowAccessory(this, existingAccessory, device));
+      for (const role of NAVIMOW_ACCESSORY_ROLES) {
+        const accessoryKey = buildAccessoryKey(device.id, role);
+        seenAccessoryKeys.add(accessoryKey);
+
+        const existingAccessory = this.cachedAccessories.get(accessoryKey);
+        if (existingAccessory) {
+          existingAccessory.context.device = device;
+          existingAccessory.context.role = role;
+          const navimowAccessory = this.accessories.get(accessoryKey);
+          if (navimowAccessory) {
+            navimowAccessory.updateDevice(device);
+          } else {
+            this.accessories.set(accessoryKey, new NavimowAccessory(this, existingAccessory, device, role));
+          }
+          this.api.updatePlatformAccessories([existingAccessory]);
+          continue;
         }
-        this.api.updatePlatformAccessories([existingAccessory]);
-        continue;
+
+        const name = buildAccessoryName(device.name, role);
+        const uuid = this.api.hap.uuid.generate(`${PLUGIN_NAME}:${device.id}:${role}`);
+        const accessory = new this.api.platformAccessory(name, uuid);
+        accessory.context.device = device;
+        accessory.context.role = role;
+
+        const navimowAccessory = new NavimowAccessory(this, accessory, device, role);
+        this.cachedAccessories.set(accessoryKey, accessory);
+        this.accessories.set(accessoryKey, navimowAccessory);
+        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
       }
-
-      const uuid = this.api.hap.uuid.generate(`${PLUGIN_NAME}:${device.id}`);
-      const accessory = new this.api.platformAccessory(device.name, uuid);
-      accessory.context.device = device;
-
-      const navimowAccessory = new NavimowAccessory(this, accessory, device);
-      this.cachedAccessories.set(device.id, accessory);
-      this.accessories.set(device.id, navimowAccessory);
-      this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
     }
 
-    for (const [deviceId, accessory] of this.cachedAccessories.entries()) {
-      if (seenDeviceIds.has(deviceId)) {
+    for (const [accessoryKey, accessory] of this.cachedAccessories.entries()) {
+      if (seenAccessoryKeys.has(accessoryKey)) {
         continue;
       }
 
       this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-      this.cachedAccessories.delete(deviceId);
-      this.accessories.delete(deviceId);
+      this.cachedAccessories.delete(accessoryKey);
+      this.accessories.delete(accessoryKey);
     }
+  }
+}
+
+function buildAccessoryKey(deviceId: string, role?: NavimowAccessoryRole): string {
+  return `${deviceId}:${role ?? 'legacy'}`;
+}
+
+function buildAccessoryName(deviceName: string, role: NavimowAccessoryRole): string {
+  switch (role) {
+    case 'mowing':
+      return `${deviceName} Mowing`;
+    case 'dock':
+      return `${deviceName} Dock`;
+    case 'stop':
+      return `${deviceName} Stop`;
   }
 }
 

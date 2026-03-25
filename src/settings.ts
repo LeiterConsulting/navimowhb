@@ -2,6 +2,9 @@ export const PLUGIN_NAME = 'homebridge-navimow';
 export const PLATFORM_NAME = 'NavimowPlatform';
 
 export type NavimowCommand = 'start' | 'pause' | 'resume' | 'dock' | 'stop';
+export type NavimowAccessoryRole = 'mowing' | 'dock' | 'stop';
+
+export const NAVIMOW_ACCESSORY_ROLES: NavimowAccessoryRole[] = ['mowing', 'dock', 'stop'];
 
 export interface NavimowPlatformConfig {
   platform: string;

@@ -742,7 +742,14 @@
 
       return cachedAccessories
         .filter(accessory => accessory.context && accessory.context.navimow)
-        .sort((left, right) => left.displayName.localeCompare(right.displayName))
+        .filter(accessory => !accessory.context.role || accessory.context.role === 'mowing')
+        .sort((left, right) => getAccessoryLabel(left).localeCompare(getAccessoryLabel(right)))
+    }
+
+    const getAccessoryLabel = accessory => {
+      return accessory.context?.navimow?.deviceName
+        || accessory.context?.device?.name
+        || accessory.displayName
     }
 
     const renderAccessory = uuid => {
@@ -758,7 +765,7 @@
       const mowingTime = info.metrics?.mowing_time
       const totalMowingTime = info.metrics?.total_mowing_time
 
-      document.getElementById('displayNameValue').textContent = accessory.displayName
+      document.getElementById('displayNameValue').textContent = getAccessoryLabel(accessory)
       document.getElementById('deviceIdValue').textContent = info.deviceId || 'N/A'
       document.getElementById('serialValue').textContent = info.serialNumber || 'N/A'
       document.getElementById('macValue').textContent = info.macAddress || 'N/A'
@@ -809,7 +816,7 @@
         deviceSelect.disabled = false
         deviceAccessories.forEach(accessory => {
           const option = document.createElement('option')
-          option.text = accessory.displayName
+          option.text = getAccessoryLabel(accessory)
           option.value = accessory.UUID
           deviceSelect.add(option)
         })

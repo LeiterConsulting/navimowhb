@@ -5,7 +5,7 @@ import type {
 } from 'homebridge';
 
 import type { NavimowPlatform } from './platform';
-import type { NavimowDevice, NavimowState } from './settings';
+import type { NavimowAccessoryRole, NavimowDevice, NavimowState } from './settings';
 
 const ACTIVE_STATES = new Set(['mowing', 'returning']);
 const CHARGING_STATES = new Set(['charging']);
@@ -14,42 +14,36 @@ const PAUSED_STATES = new Set(['paused']);
 
 export class NavimowAccessory {
   private readonly informationService: Service;
-  private readonly mowerService: Service;
-  private readonly dockService: Service;
-  private readonly stopService: Service;
-  private readonly batteryService: Service;
+  private readonly switchService: Service;
+  private readonly batteryService: Service | null;
   private currentState: NavimowState | null = null;
-  private dockSwitchArmed = false;
-  private stopSwitchArmed = false;
+  private actionSwitchArmed = false;
 
   constructor(
     private readonly platform: NavimowPlatform,
     private readonly accessory: PlatformAccessory,
     private device: NavimowDevice,
+    private readonly role: NavimowAccessoryRole,
   ) {
     const { Service, Characteristic } = this.platform;
+    const accessoryName = buildAccessoryName(device.name, role);
 
     this.accessory.category = this.platform.api.hap.Categories.SWITCH;
+    this.accessory.displayName = accessoryName;
+    this.accessory.context.device = device;
+    this.accessory.context.role = role;
 
     this.informationService =
       this.accessory.getService(Service.AccessoryInformation) ??
       this.accessory.addService(Service.AccessoryInformation);
 
-    this.mowerService =
-      this.accessory.getServiceById(Service.Switch, 'mowing') ??
-      this.accessory.addService(Service.Switch, 'Mowing', 'mowing');
+    this.switchService =
+      this.accessory.getServiceById(Service.Switch, role) ??
+      this.accessory.addService(Service.Switch, accessoryName, role);
 
-    this.dockService =
-      this.accessory.getServiceById(Service.Switch, 'dock') ??
-      this.accessory.addService(Service.Switch, 'Dock', 'dock');
-
-    this.stopService =
-      this.accessory.getServiceById(Service.Switch, 'stop') ??
-      this.accessory.addService(Service.Switch, 'Stop', 'stop');
-
-    this.batteryService =
-      this.accessory.getService(Service.Battery) ??
-      this.accessory.addService(Service.Battery);
+    this.batteryService = role === 'mowing'
+      ? (this.accessory.getService(Service.Battery) ?? this.accessory.addService(Service.Battery))
+      : null;
 
     this.informationService
       .setCharacteristic(Characteristic.Manufacturer, 'Navimow')
@@ -60,23 +54,11 @@ export class NavimowAccessory {
         device.firmwareVersion || 'Unknown',
       );
 
-    this.mowerService
-      .setCharacteristic(Characteristic.Name, `${device.name} Mowing`)
+    setServiceLabel(this.switchService, Characteristic, accessoryName);
+    this.switchService
       .getCharacteristic(Characteristic.On)
-      .onGet(this.handleMowingGet.bind(this))
-      .onSet(this.handleMowingSet.bind(this));
-
-    this.dockService
-      .setCharacteristic(Characteristic.Name, `${device.name} Dock`)
-      .getCharacteristic(Characteristic.On)
-      .onGet(this.handleDockGet.bind(this))
-      .onSet(this.handleDockSet.bind(this));
-
-    this.stopService
-      .setCharacteristic(Characteristic.Name, `${device.name} Stop`)
-      .getCharacteristic(Characteristic.On)
-      .onGet(this.handleStopGet.bind(this))
-      .onSet(this.handleStopSet.bind(this));
+      .onGet(this.handleSwitchGet.bind(this))
+      .onSet(this.handleSwitchSet.bind(this));
 
     this.updateContext();
     this.refreshReachability();
@@ -85,8 +67,10 @@ export class NavimowAccessory {
 
   updateDevice(device: NavimowDevice): void {
     this.device = device;
-    this.accessory.displayName = device.name;
+    const accessoryName = buildAccessoryName(device.name, this.role);
+    this.accessory.displayName = accessoryName;
     this.accessory.context.device = device;
+    setServiceLabel(this.switchService, this.platform.Characteristic, accessoryName);
     this.updateContext();
     this.refreshReachability();
     this.persistAccessoryContext();
@@ -100,67 +84,21 @@ export class NavimowAccessory {
     this.persistAccessoryContext();
   }
 
-  private handleMowingGet(): CharacteristicValue {
-    return this.isActivelyMowing();
+  private handleSwitchGet(): CharacteristicValue {
+    if (this.role === 'mowing') {
+      return this.isActivelyMowing();
+    }
+
+    return this.actionSwitchArmed;
   }
 
-  private async handleMowingSet(value: CharacteristicValue): Promise<void> {
-    const nextValue = Boolean(value);
-    const currentState = this.currentState?.state ?? 'unknown';
-
-    if (nextValue) {
-      const command = currentState === 'paused' ? 'resume' : 'start';
-      await this.platform.bridge.sendCommand(this.device.id, command);
+  private async handleSwitchSet(value: CharacteristicValue): Promise<void> {
+    if (this.role === 'mowing') {
+      await this.handleMowingSet(value);
       return;
     }
 
-    await this.platform.bridge.sendCommand(this.device.id, 'pause');
-  }
-
-  private handleStopGet(): CharacteristicValue {
-    return this.stopSwitchArmed;
-  }
-
-  private async handleStopSet(value: CharacteristicValue): Promise<void> {
-    if (!value) {
-      this.stopSwitchArmed = false;
-      return;
-    }
-
-    this.stopSwitchArmed = true;
-    this.stopService.updateCharacteristic(this.platform.Characteristic.On, true);
-
-    try {
-      await this.platform.bridge.sendCommand(this.device.id, 'stop');
-    } finally {
-      setTimeout(() => {
-        this.stopSwitchArmed = false;
-        this.stopService.updateCharacteristic(this.platform.Characteristic.On, false);
-      }, 1000);
-    }
-  }
-
-  private handleDockGet(): CharacteristicValue {
-    return this.dockSwitchArmed;
-  }
-
-  private async handleDockSet(value: CharacteristicValue): Promise<void> {
-    if (!value) {
-      this.dockSwitchArmed = false;
-      return;
-    }
-
-    this.dockSwitchArmed = true;
-    this.dockService.updateCharacteristic(this.platform.Characteristic.On, true);
-
-    try {
-      await this.platform.bridge.sendCommand(this.device.id, 'dock');
-    } finally {
-      setTimeout(() => {
-        this.dockSwitchArmed = false;
-        this.dockService.updateCharacteristic(this.platform.Characteristic.On, false);
-      }, 1000);
-    }
+    await this.handleMomentarySwitchSet(value);
   }
 
   private isActivelyMowing(): boolean {
@@ -188,12 +126,15 @@ export class NavimowAccessory {
   }
 
   private refreshReachability(): void {
-    this.mowerService.updateCharacteristic(this.platform.Characteristic.On, this.isActivelyMowing());
-    this.stopService.updateCharacteristic(this.platform.Characteristic.On, this.stopSwitchArmed);
-    this.dockService.updateCharacteristic(this.platform.Characteristic.On, this.dockSwitchArmed);
+    const onValue = this.role === 'mowing' ? this.isActivelyMowing() : this.actionSwitchArmed;
+    this.switchService.updateCharacteristic(this.platform.Characteristic.On, onValue);
   }
 
   private refreshBatteryService(): void {
+    if (!this.batteryService) {
+      return;
+    }
+
     const { Characteristic } = this.platform;
     const batteryLevel = this.getBatteryLevel();
     const charging = this.currentState?.state === 'charging'
@@ -224,6 +165,7 @@ export class NavimowAccessory {
     this.accessory.context.navimow = {
       attributes: Object.keys(attributes).length ? attributes : (previous.attributes ?? null),
       battery: this.getBatteryLevel(previous),
+      deviceName: this.device.name,
       deviceId: this.device.id,
       errorCode: typeof error?.code === 'string' ? error.code : null,
       errorMessage: typeof error?.message === 'string' ? error.message : null,
@@ -274,6 +216,39 @@ export class NavimowAccessory {
     };
   }
 
+  private async handleMowingSet(value: CharacteristicValue): Promise<void> {
+    const nextValue = Boolean(value);
+    const currentState = this.currentState?.state ?? 'unknown';
+
+    if (nextValue) {
+      const command = currentState === 'paused' ? 'resume' : 'start';
+      await this.platform.bridge.sendCommand(this.device.id, command);
+      return;
+    }
+
+    await this.platform.bridge.sendCommand(this.device.id, 'pause');
+  }
+
+  private async handleMomentarySwitchSet(value: CharacteristicValue): Promise<void> {
+    if (!value) {
+      this.actionSwitchArmed = false;
+      return;
+    }
+
+    this.actionSwitchArmed = true;
+    this.switchService.updateCharacteristic(this.platform.Characteristic.On, true);
+
+    try {
+      const command = this.role === 'dock' ? 'dock' : 'stop';
+      await this.platform.bridge.sendCommand(this.device.id, command);
+    } finally {
+      setTimeout(() => {
+        this.actionSwitchArmed = false;
+        this.switchService.updateCharacteristic(this.platform.Characteristic.On, false);
+      }, 1000);
+    }
+  }
+
   private getBatteryLevel(previous = (this.accessory.context.navimow ?? {}) as Record<string, unknown>): number | null {
     const candidates = [this.currentState?.battery, previous.battery];
     for (const candidate of candidates) {
@@ -296,6 +271,28 @@ export class NavimowAccessory {
 
   private persistAccessoryContext(): void {
     this.platform.api.updatePlatformAccessories([this.accessory]);
+  }
+}
+
+function buildAccessoryName(deviceName: string, role: NavimowAccessoryRole): string {
+  switch (role) {
+    case 'mowing':
+      return `${deviceName} Mowing`;
+    case 'dock':
+      return `${deviceName} Dock`;
+    case 'stop':
+      return `${deviceName} Stop`;
+  }
+}
+
+function setServiceLabel(
+  service: Service,
+  characteristic: NavimowPlatform['Characteristic'],
+  label: string,
+): void {
+  service.setCharacteristic(characteristic.Name, label);
+  if ('ConfiguredName' in characteristic) {
+    service.setCharacteristic(characteristic.ConfiguredName, label);
   }
 }
 
