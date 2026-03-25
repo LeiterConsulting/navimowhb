@@ -363,29 +363,99 @@ function mapCommand(command: NavimowCommand): { command: string; params?: Record
 
 function normalizeDevice(device: Record<string, unknown>): NavimowDevice {
   return {
-    firmwareVersion: stringValue(device.firmwareVersion) ?? stringValue(device.firmware_version) ?? '',
+    firmwareVersion: stringFromPaths(device, [
+      ['firmwareVersion'],
+      ['firmware_version'],
+      ['firmware', 'version'],
+      ['firmwareInfo', 'version'],
+      ['deviceInfo', 'firmwareVersion'],
+      ['deviceInfo', 'firmware_version'],
+      ['otaInfo', 'version'],
+      ['softwareVersion'],
+      ['swVersion'],
+    ]) ?? '',
     id: stringValue(device.id) ?? '',
-    macAddress: stringValue(device.macAddress) ?? stringValue(device.mac_address),
-    model: stringValue(device.model) ?? '',
+    macAddress: stringFromPaths(device, [
+      ['macAddress'],
+      ['mac_address'],
+      ['deviceInfo', 'macAddress'],
+      ['deviceInfo', 'mac_address'],
+      ['network', 'macAddress'],
+      ['network', 'mac_address'],
+    ]),
+    model: stringFromPaths(device, [
+      ['model'],
+      ['deviceModel'],
+      ['device_model'],
+      ['deviceInfo', 'model'],
+      ['productInfo', 'model'],
+      ['vehicle', 'model'],
+    ]) ?? '',
     name: stringValue(device.name) ?? '',
     online: booleanValue(device.online),
-    serialNumber: stringValue(device.serialNumber) ?? stringValue(device.serial_number) ?? stringValue(device.id) ?? '',
+    serialNumber: stringFromPaths(device, [
+      ['serialNumber'],
+      ['serial_number'],
+      ['sn'],
+      ['deviceInfo', 'serialNumber'],
+      ['deviceInfo', 'serial_number'],
+      ['productInfo', 'serialNumber'],
+      ['productInfo', 'serial_number'],
+      ['vehicle', 'serialNumber'],
+    ]) ?? stringValue(device.id) ?? '',
   };
 }
 
 function normalizeState(status: Record<string, unknown>, source: string): NavimowState {
-  const rawState = stringValue(status.state) ?? stringValue(status.status) ?? stringValue(status.vehicleState);
+  const rawState = stringFromPaths(status, [
+    ['state'],
+    ['status'],
+    ['vehicleState'],
+    ['vehicle_state'],
+    ['deviceState'],
+    ['device_state'],
+    ['attributes', 'state'],
+    ['attributes', 'status'],
+  ]);
   const normalizedState = rawState ? (RAW_STATE_TO_CANONICAL[rawState] ?? rawState) : 'unknown';
-  const errorCode = stringValue(status.error_code) ?? stringValue(status.errorCode);
-  const errorMessage = stringValue(status.error_message) ?? stringValue(status.errorMessage);
+  const errorCode = stringFromPaths(status, [
+    ['error_code'],
+    ['errorCode'],
+    ['error', 'code'],
+    ['attributes', 'error_code'],
+    ['attributes', 'errorCode'],
+    ['attributes', 'error', 'code'],
+  ]);
+  const errorMessage = stringFromPaths(status, [
+    ['error_message'],
+    ['errorMessage'],
+    ['error', 'message'],
+    ['attributes', 'error_message'],
+    ['attributes', 'errorMessage'],
+    ['attributes', 'error', 'message'],
+  ]);
   const metrics: Record<string, unknown> = {};
 
-  const mowingTime = numberValue(status.mowing_time) ?? numberValue(status.mowingTime);
+  const mowingTime = numberFromPaths(status, [
+    ['mowing_time'],
+    ['mowingTime'],
+    ['metrics', 'mowing_time'],
+    ['metrics', 'mowingTime'],
+    ['attributes', 'mowing_time'],
+    ['attributes', 'mowingTime'],
+  ]);
   if (mowingTime !== null) {
     metrics.mowing_time = mowingTime;
   }
 
-  const totalMowingTime = numberValue(status.total_mowing_time) ?? numberValue(status.totalMowingTime);
+  const totalMowingTime = numberFromPaths(status, [
+    ['total_mowing_time'],
+    ['totalMowingTime'],
+    ['metrics', 'total_mowing_time'],
+    ['metrics', 'totalMowingTime'],
+    ['attributes', 'total_mowing_time'],
+    ['attributes', 'totalMowingTime'],
+  ]);
   if (totalMowingTime !== null) {
     metrics.total_mowing_time = totalMowingTime;
   }
@@ -399,10 +469,22 @@ function normalizeState(status: Record<string, unknown>, source: string): Navimo
     metrics.extra = extra;
   }
 
+  const attributePayload = objectFromPaths(status, [
+    ['attributes'],
+    ['deviceAttributes'],
+    ['device_attributes'],
+    ['extra'],
+  ]) ?? status;
+
   return {
-    attributes: null,
+    attributes: attributePayload,
     battery: extractBatteryValue(status),
-    deviceId: stringValue(status.device_id) ?? stringValue(status.id) ?? '',
+    deviceId: stringFromPaths(status, [
+      ['device_id'],
+      ['deviceId'],
+      ['id'],
+      ['device', 'id'],
+    ]) ?? '',
     error: errorCode && errorCode !== 'none'
       ? {
           code: errorCode,
@@ -410,22 +492,66 @@ function normalizeState(status: Record<string, unknown>, source: string): Navimo
         }
       : null,
     metrics: Object.keys(metrics).length ? metrics : null,
-    position: objectValue(status.position) as Record<string, number> | null,
+    position: objectFromPaths(status, [
+      ['position'],
+      ['attributes', 'position'],
+      ['location'],
+      ['attributes', 'location'],
+      ['gps'],
+      ['attributes', 'gps'],
+    ]) as Record<string, number> | null,
     rawCommandResult: null,
-    signalStrength: numberValue(status.signal_strength) ?? numberValue(status.signalStrength),
+    signalStrength: numberFromPaths(status, [
+      ['signal_strength'],
+      ['signalStrength'],
+      ['networkInfo', 'signalStrength'],
+      ['networkInfo', 'signal_strength'],
+      ['attributes', 'signal_strength'],
+      ['attributes', 'signalStrength'],
+      ['attributes', 'networkInfo', 'signalStrength'],
+      ['attributes', 'networkInfo', 'signal_strength'],
+      ['rssi'],
+      ['attributes', 'rssi'],
+    ]),
     source,
     state: normalizedState,
-    timestamp: numberValue(status.timestamp),
+    timestamp: numberFromPaths(status, [
+      ['timestamp'],
+      ['reportTime'],
+      ['report_time'],
+      ['lastUpdateTimestamp'],
+      ['attributes', 'timestamp'],
+      ['attributes', 'reportTime'],
+      ['attributes', 'report_time'],
+    ]),
   };
 }
 
 function extractBatteryValue(data: Record<string, unknown>): number | null {
-  const direct = numberValue(data.battery) ?? numberValue(data.batteryLevel) ?? numberValue(data.capacityRemaining);
+  const direct = numberFromPaths(data, [
+    ['battery'],
+    ['batteryLevel'],
+    ['capacityRemaining'],
+    ['batteryInfo', 'battery'],
+    ['batteryInfo', 'batteryLevel'],
+    ['batteryInfo', 'capacityRemaining'],
+    ['attributes', 'battery'],
+    ['attributes', 'batteryLevel'],
+    ['attributes', 'capacityRemaining'],
+    ['attributes', 'batteryInfo', 'battery'],
+    ['attributes', 'batteryInfo', 'batteryLevel'],
+    ['attributes', 'batteryInfo', 'capacityRemaining'],
+  ]);
   if (direct !== null) {
     return normalizeBatteryValue(direct);
   }
 
-  const descriptive = data.descriptiveCapacityRemaining;
+  const descriptive = stringFromPaths(data, [
+    ['descriptiveCapacityRemaining'],
+    ['batteryInfo', 'descriptiveCapacityRemaining'],
+    ['attributes', 'descriptiveCapacityRemaining'],
+    ['attributes', 'batteryInfo', 'descriptiveCapacityRemaining'],
+  ]);
   if (typeof descriptive === 'string') {
     const match = descriptive.match(/\d+/);
     if (match) {
@@ -464,4 +590,45 @@ function objectValue(value: unknown): Record<string, unknown> | null {
     return null;
   }
   return value as Record<string, unknown>;
+}
+
+function valueAtPath(record: Record<string, unknown>, path: string[]): unknown {
+  let current: unknown = record;
+  for (const segment of path) {
+    if (!current || typeof current !== 'object' || Array.isArray(current)) {
+      return null;
+    }
+    current = (current as Record<string, unknown>)[segment];
+  }
+  return current;
+}
+
+function stringFromPaths(record: Record<string, unknown>, paths: string[][]): string | null {
+  for (const path of paths) {
+    const value = stringValue(valueAtPath(record, path));
+    if (value !== null) {
+      return value;
+    }
+  }
+  return null;
+}
+
+function numberFromPaths(record: Record<string, unknown>, paths: string[][]): number | null {
+  for (const path of paths) {
+    const value = numberValue(valueAtPath(record, path));
+    if (value !== null) {
+      return value;
+    }
+  }
+  return null;
+}
+
+function objectFromPaths(record: Record<string, unknown>, paths: string[][]): Record<string, unknown> | null {
+  for (const path of paths) {
+    const value = objectValue(valueAtPath(record, path));
+    if (value !== null) {
+      return value;
+    }
+  }
+  return null;
 }

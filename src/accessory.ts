@@ -217,15 +217,24 @@ export class NavimowAccessory {
 
   private updateContext(): void {
     const previous = (this.accessory.context.navimow ?? {}) as Record<string, unknown>;
+    const attributes = (this.currentState?.attributes ?? {}) as Record<string, unknown>;
     const error = this.currentState?.error;
     const metrics = this.currentState?.metrics;
 
     this.accessory.context.navimow = {
+      attributes: Object.keys(attributes).length ? attributes : (previous.attributes ?? null),
       battery: this.getBatteryLevel(previous),
       deviceId: this.device.id,
       errorCode: typeof error?.code === 'string' ? error.code : null,
       errorMessage: typeof error?.message === 'string' ? error.message : null,
-      firmwareVersion: this.device.firmwareVersion || null,
+      firmwareVersion: this.getDeviceString([
+        this.device.firmwareVersion,
+        getStringAtPath(attributes, ['firmwareVersion']),
+        getStringAtPath(attributes, ['firmware_version']),
+        getStringAtPath(attributes, ['firmware', 'version']),
+        getStringAtPath(attributes, ['deviceInfo', 'firmwareVersion']),
+        previous.firmwareVersion,
+      ]),
       hasError: this.currentState?.error != null || this.currentState?.state === 'error',
       isActive: this.isActivelyMowing(),
       isCharging: this.isCharging(),
@@ -233,14 +242,33 @@ export class NavimowAccessory {
       isPaused: this.isPaused(),
       lastSource: this.currentState?.source ?? previous.lastSource ?? null,
       lastUpdatedAt: this.currentState?.timestamp ?? previous.lastUpdatedAt ?? null,
-      macAddress: this.device.macAddress ?? null,
+      macAddress: this.getDeviceString([
+        this.device.macAddress,
+        getStringAtPath(attributes, ['macAddress']),
+        getStringAtPath(attributes, ['mac_address']),
+        getStringAtPath(attributes, ['deviceInfo', 'macAddress']),
+        previous.macAddress,
+      ]),
       metrics: metrics ?? previous.metrics ?? null,
-      model: this.device.model || null,
+      model: this.getDeviceString([
+        this.device.model,
+        getStringAtPath(attributes, ['model']),
+        getStringAtPath(attributes, ['deviceModel']),
+        getStringAtPath(attributes, ['deviceInfo', 'model']),
+        previous.model,
+      ]),
       online: this.currentState ? true : (this.device.online ?? null),
       position: this.currentState?.position ?? previous.position ?? null,
       rawCommandResult:
         this.currentState?.rawCommandResult ?? previous.rawCommandResult ?? null,
-      serialNumber: this.device.serialNumber || this.device.id,
+      serialNumber: this.getDeviceString([
+        this.device.serialNumber,
+        getStringAtPath(attributes, ['serialNumber']),
+        getStringAtPath(attributes, ['serial_number']),
+        getStringAtPath(attributes, ['deviceInfo', 'serialNumber']),
+        this.device.id,
+        previous.serialNumber,
+      ]) ?? this.device.id,
       signalStrength: this.currentState?.signalStrength ?? previous.signalStrength ?? null,
       state: this.currentState?.state ?? null,
     };
@@ -257,7 +285,28 @@ export class NavimowAccessory {
     return null;
   }
 
+  private getDeviceString(candidates: Array<unknown>): string | null {
+    for (const candidate of candidates) {
+      if (typeof candidate === 'string' && candidate.length > 0) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
   private persistAccessoryContext(): void {
     this.platform.api.updatePlatformAccessories([this.accessory]);
   }
+}
+
+function getStringAtPath(record: Record<string, unknown>, path: string[]): string | null {
+  let current: unknown = record;
+  for (const segment of path) {
+    if (!current || typeof current !== 'object' || Array.isArray(current)) {
+      return null;
+    }
+    current = (current as Record<string, unknown>)[segment];
+  }
+
+  return typeof current === 'string' && current.length > 0 ? current : null;
 }
