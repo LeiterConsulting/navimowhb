@@ -89,3 +89,70 @@ If the problem continues, please file an issue on GitHub and include relevant lo
 ## Navimow SDK Library 📚
 
 This integration uses `navimow-sdk` to communicate with Navimow mowers. `navimow-sdk` provides the Python API used by this integration (details will be expanded in the SDK documentation).
+
+## Core plugin pieces to reuse for a Homebridge port 🔌
+
+If we want to port this integration to Homebridge, the current Home Assistant plugin already gives us a clear platform-agnostic core:
+
+### Reusable core logic
+
+1. **Authentication and API session bootstrap**
+   - `custom_components/navimow/config_flow.py`
+   - `custom_components/navimow/auth.py`
+   - `custom_components/navimow/__init__.py`
+   - Handles OAuth2 token acquisition/refresh and creates the authenticated `MowerAPI` client.
+
+2. **Device discovery**
+   - `custom_components/navimow/__init__.py`
+   - Calls `api.async_get_devices()` to discover mowers tied to the authenticated account.
+
+3. **Real-time connectivity**
+   - `custom_components/navimow/__init__.py`
+   - Calls `api.async_get_mqtt_user_info()` and builds the `NavimowSDK` MQTT/WebSocket connection used for live mower updates.
+
+4. **Device state aggregation**
+   - `custom_components/navimow/coordinator.py`
+   - Combines:
+     - MQTT push updates
+     - SDK cached state/attributes
+     - HTTP fallback when MQTT data becomes stale
+   - Produces a normalized runtime data shape containing `device`, `state`, `attributes`, and update metadata.
+
+5. **Command execution**
+   - `custom_components/navimow/lawn_mower.py`
+   - Uses `api.async_send_command(...)` for the mower actions we would also need in Homebridge:
+     - `START`
+     - `PAUSE`
+     - `RESUME`
+     - `DOCK`
+
+6. **Simple telemetry extraction**
+   - `custom_components/navimow/sensor.py`
+   - Demonstrates how battery data is read from the shared coordinator state and exposed as a platform entity.
+
+### Home Assistant-specific wrapper layer
+
+These parts are useful as references, but would need to be replaced by Homebridge-specific equivalents:
+
+- Home Assistant config entry lifecycle in `custom_components/navimow/__init__.py`
+- Home Assistant OAuth flow wiring in `custom_components/navimow/config_flow.py`
+- Home Assistant `lawn_mower` entity implementation in `custom_components/navimow/lawn_mower.py`
+- Home Assistant sensor entity implementation in `custom_components/navimow/sensor.py`
+
+### Suggested extraction boundary
+
+The best first step for a Homebridge port is to treat the following as the shared integration core:
+
+- OAuth token handling
+- `MowerAPI` client creation
+- device discovery
+- MQTT/WebSocket connection setup through `NavimowSDK`
+- merged mower state model
+- mower command methods
+
+Then keep only the entity/accessory presentation layer platform-specific:
+
+- **Home Assistant:** entities, config entry lifecycle, coordinator wiring
+- **Homebridge:** accessories/services/characteristics, Homebridge auth/session wiring
+
+In short: the reusable core is the Navimow cloud login, device discovery, MQTT state pipeline, normalized mower state, and mower command execution. The Home Assistant entities are mostly an adapter around that core.
