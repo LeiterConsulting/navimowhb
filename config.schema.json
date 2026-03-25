@@ -1,0 +1,85 @@
+{
+  "pluginAlias": "NavimowPlatform",
+  "pluginType": "platform",
+  "singular": true,
+  "customUi": true,
+  "strictValidation": true,
+  "headerDisplay": "Navimow for Homebridge lets you see and control your Segway Navimow mowers from Homebridge and HomeKit.",
+  "footerDisplay": "Need help with advanced sign-in or network settings? See the README in the GitHub repository for setup and troubleshooting guidance.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "platform": {
+        "type": "string",
+        "default": "NavimowPlatform",
+        "required": true
+      },
+      "name": {
+        "title": "Name",
+        "type": "string",
+        "default": "Navimow"
+      },
+      "authCallbackPort": {
+        "title": "Advanced Callback Port",
+        "type": "integer",
+        "default": 47129,
+        "minimum": 1,
+        "maximum": 65535,
+        "description": "Only change this if Homebridge cannot receive the Navimow sign-in callback on the default port."
+      },
+      "authCallbackHost": {
+        "title": "Advanced Callback Host",
+        "type": "string",
+        "placeholder": "192.168.1.71",
+        "description": "Optional LAN host name or IP address for sign-in return traffic when localhost will not work."
+      },
+      "authCallbackBaseUrl": {
+        "title": "Advanced Callback Base URL",
+        "type": "string",
+        "placeholder": "http://192.168.1.71:47129",
+        "description": "Optional full return URL for advanced setups. When used, it overrides the callback host and port above."
+      },
+      "updateIntervalSeconds": {
+        "title": "Refresh Interval",
+        "type": "integer",
+        "default": 30,
+        "minimum": 5,
+        "description": "How often Homebridge refreshes mower status from Navimow."
+      },
+      "tokenStoragePath": {
+        "title": "Advanced Sign-In Storage Path",
+        "type": "string",
+        "placeholder": "/var/lib/homebridge/navimow/tokens.json",
+        "description": "Optional custom location for the saved Navimow sign-in details."
+      }
+    }
+  },
+  "form": [
+    {
+      "key": "platform",
+      "type": "hidden"
+    },
+    "name",
+    {
+      "type": "fieldset",
+      "title": "Advanced Storage",
+      "expandable": true,
+      "description": "Usually you can leave this alone.",
+      "items": [
+        "tokenStoragePath"
+      ]
+    },
+    {
+      "type": "fieldset",
+      "title": "Advanced Sign-In Network Settings",
+      "expandable": true,
+      "description": "Use these only if your browser cannot return to Homebridge after Navimow sign-in. The README explains when each option is helpful.",
+      "items": [
+        "authCallbackPort",
+        "authCallbackHost",
+        "authCallbackBaseUrl"
+      ]
+    },
+    "updateIntervalSeconds"
+  ]
+}

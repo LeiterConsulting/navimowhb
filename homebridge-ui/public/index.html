@@ -1,0 +1,984 @@
+<style>
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  :root {
+    color-scheme: light dark;
+    --navimow-cream: #f4f1e8;
+    --navimow-sand: #d5c7a3;
+    --navimow-ink: #14231a;
+    --navimow-moss: #48613f;
+    --navimow-leaf: #729c5a;
+    --navimow-alert: #a54834;
+    --navimow-card: rgba(255, 255, 255, 0.76);
+  }
+
+  body {
+    margin: 0;
+    background:
+      radial-gradient(circle at top right, rgba(114, 156, 90, 0.28), transparent 28%),
+      radial-gradient(circle at bottom left, rgba(213, 199, 163, 0.38), transparent 32%),
+      linear-gradient(160deg, #f7f2e7 0%, #e6eadf 100%);
+    color: var(--navimow-ink);
+    overflow-wrap: anywhere;
+  }
+
+  .dark-mode {
+    --navimow-card: rgba(20, 35, 26, 0.78);
+    color: #eef3e7;
+    background:
+      radial-gradient(circle at top right, rgba(114, 156, 90, 0.2), transparent 30%),
+      radial-gradient(circle at bottom left, rgba(165, 72, 52, 0.14), transparent 35%),
+      linear-gradient(160deg, #0d1711 0%, #1a281f 100%);
+  }
+
+  .nav-shell {
+    margin: 0 auto;
+    max-width: 960px;
+    padding: 1rem;
+  }
+
+  .hero {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    margin-bottom: 1.25rem;
+    padding: 1.5rem;
+    border-radius: 22px;
+    background: linear-gradient(135deg, rgba(20, 35, 26, 0.96), rgba(72, 97, 63, 0.88));
+    color: #f8fbf5;
+    box-shadow: 0 20px 50px rgba(20, 35, 26, 0.2);
+    min-width: 0;
+  }
+
+  .hero-badge {
+    flex: 0 0 auto;
+    width: 84px;
+    height: 84px;
+    border-radius: 24px;
+    background: rgba(244, 241, 232, 0.16);
+    border: 1px solid rgba(244, 241, 232, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hero-badge img {
+    width: 62px;
+    height: 62px;
+  }
+
+  .hero-copy {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .hero h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+  }
+
+  .hero p {
+    margin: 0.75rem 0 0;
+    max-width: 42rem;
+    color: rgba(248, 251, 245, 0.86);
+    line-height: 1.55;
+  }
+
+  .intro-card,
+  .panel,
+  .device-table {
+    background: var(--navimow-card);
+    border: 1px solid rgba(72, 97, 63, 0.14);
+    backdrop-filter: blur(12px);
+    border-radius: 20px;
+    box-shadow: 0 16px 40px rgba(20, 35, 26, 0.08);
+  }
+
+  .intro-card,
+  .panel {
+    padding: 1.25rem;
+    min-width: 0;
+  }
+
+  .menu {
+    display: none;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .menu button {
+    border: none;
+    border-radius: 999px;
+    padding: 0.7rem 1rem;
+    font-weight: 600;
+    background: rgba(72, 97, 63, 0.12);
+    color: inherit;
+    min-height: 42px;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .menu button.active {
+    background: var(--navimow-moss);
+    color: #f7fbf3;
+  }
+
+  .panel,
+  .intro-card {
+    display: none;
+  }
+
+  .device-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.9rem;
+    margin-bottom: 1rem;
+    align-items: stretch;
+  }
+
+  .device-stat {
+    padding: 0.9rem;
+    border-radius: 16px;
+    background: rgba(114, 156, 90, 0.1);
+    min-width: 0;
+  }
+
+  .device-stat .label {
+    display: block;
+    font-size: 0.82rem;
+    opacity: 0.75;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .device-stat .value {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .device-table {
+    width: 100%;
+    overflow: hidden;
+    overflow-x: auto;
+  }
+
+  .panel-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .device-table table {
+    width: 100%;
+    margin: 0;
+    table-layout: fixed;
+    border-collapse: collapse;
+  }
+
+  .device-table th,
+  .device-table td {
+    padding: 0.9rem 1rem;
+    border: none;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.45;
+  }
+
+  .device-table th {
+    width: 32%;
+    min-width: 150px;
+    text-align: left;
+  }
+
+  .device-table tr + tr {
+    border-top: 1px solid rgba(72, 97, 63, 0.12);
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.35;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .pill.ok {
+    background: rgba(114, 156, 90, 0.16);
+    color: var(--navimow-moss);
+  }
+
+  .pill.warn {
+    background: rgba(165, 72, 52, 0.16);
+    color: var(--navimow-alert);
+  }
+
+  .muted {
+    opacity: 0.75;
+    line-height: 1.5;
+  }
+
+  .support-list a {
+    color: var(--navimow-moss);
+    font-weight: 600;
+  }
+
+  .advanced-details {
+    margin-top: 1rem;
+    border-top: 1px solid rgba(72, 97, 63, 0.12);
+    padding-top: 1rem;
+  }
+
+  .advanced-details summary {
+    cursor: pointer;
+    font-weight: 600;
+    list-style: none;
+  }
+
+  .advanced-details summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .advanced-details summary::after {
+    content: 'Show';
+    float: right;
+    opacity: 0.7;
+    font-weight: 500;
+  }
+
+  .advanced-details[open] summary::after {
+    content: 'Hide';
+  }
+
+  .advanced-details-body {
+    margin-top: 0.9rem;
+  }
+
+  .support-list ul,
+  .support-list ol {
+    padding-left: 1.2rem;
+  }
+
+  .support-list li,
+  .intro-card li {
+    margin-bottom: 0.45rem;
+    line-height: 1.5;
+  }
+
+  .form-group,
+  .d-flex,
+  .device-summary,
+  .panel,
+  .intro-card {
+    min-width: 0;
+  }
+
+  #deviceSelect,
+  .form-control,
+  .btn {
+    max-width: 100%;
+  }
+
+  #deviceSelect {
+    min-height: 44px;
+  }
+
+  #authMessage,
+  #noDevicesMessage,
+  #displayNameValue,
+  #deviceIdValue,
+  #serialValue,
+  #macValue,
+  #sourceValue,
+  #timestampValue,
+  #positionValue,
+  #mowingTimeValue,
+  #totalMowingTimeValue,
+  #errorValue,
+  #commandSequenceValue {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  @media (max-width: 640px) {
+    .nav-shell {
+      padding: 0.75rem;
+    }
+
+    .hero {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .hero {
+      padding: 1.2rem;
+    }
+
+    .hero h1 {
+      font-size: 1.65rem;
+    }
+
+    .device-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .device-table th,
+    .device-table td {
+      display: block;
+      width: 100%;
+      min-width: 0;
+      padding-bottom: 0.45rem;
+    }
+
+    .device-table th {
+      padding-bottom: 0.15rem;
+    }
+
+    .device-table td {
+      padding-top: 0;
+    }
+
+    .menu button,
+    .panel-actions .btn {
+      width: 100%;
+    }
+  }
+</style>
+
+<div class="nav-shell">
+  <section class="hero">
+    <div class="hero-badge">
+      <img src="./navimow-icon.svg" alt="Navimow icon">
+    </div>
+    <div class="hero-copy">
+      <h1>Navimow for Homebridge</h1>
+      <p>See and control your Segway Navimow mowers from Homebridge and HomeKit.</p>
+    </div>
+  </section>
+
+  <section id="setupPanel" class="intro-card">
+    <div class="d-flex flex-wrap justify-content-between align-items-start" style="gap: 1rem;">
+      <div>
+        <h3 style="margin-bottom:0.35rem;">Connect your Navimow account</h3>
+        <p class="mb-0 muted">Sign in once to load your mowers into Homebridge and control them from HomeKit.</p>
+      </div>
+      <div id="authStatePill" class="pill ok">Checking</div>
+    </div>
+
+    <div class="device-grid" style="margin-top: 1rem;">
+      <div class="device-stat">
+        <span class="label">Connection Status</span>
+        <span class="value" id="authStatusLabel">Checking saved token</span>
+      </div>
+    </div>
+
+    <p id="authMessage" class="mb-3">Checking current auth state.</p>
+
+    <ol class="muted" style="padding-left: 1.2rem;">
+      <li>Open the Navimow sign-in page from here.</li>
+      <li>Sign in with the same account you use in the Navimow app.</li>
+      <li>Return here after sign-in and wait for Homebridge to finish connecting.</li>
+    </ol>
+
+    <div class="panel-actions" style="justify-content:flex-start; gap:0.75rem; flex-wrap:wrap; margin-bottom:0;">
+      <button type="button" class="btn btn-primary" id="authPrimary">Connect Navimow</button>
+      <button type="button" class="btn btn-outline-secondary" id="authRefresh">Refresh status</button>
+    </div>
+
+    <details class="advanced-details">
+      <summary>Advanced sign-in and network settings</summary>
+      <div class="advanced-details-body">
+        <p class="muted">Most people can ignore this section. Use it only if your browser cannot return to Homebridge after signing in.</p>
+        <div class="device-grid" style="margin-bottom: 0.75rem;">
+          <div class="device-stat">
+            <span class="label">Callback Address</span>
+            <span class="value" id="redirectUriValue">N/A</span>
+          </div>
+          <div class="device-stat">
+            <span class="label">Saved Login Location</span>
+            <span class="value" id="tokenPathValue">N/A</span>
+          </div>
+        </div>
+        <p class="mb-0 muted">See the <a href="https://github.com/LeiterConsulting/navimowhb#homebridge-configuration" target="_blank">README setup guide</a> for advanced callback and network troubleshooting.</p>
+      </div>
+    </details>
+  </section>
+
+  <div id="menu" class="menu">
+    <button type="button" id="menuSettings">Settings</button>
+    <button type="button" id="menuDevices">My Mowers</button>
+    <button type="button" id="menuSupport">Support</button>
+  </div>
+
+  <section id="devicesPanel" class="panel">
+    <div class="panel-actions">
+      <button type="button" class="btn btn-outline-secondary btn-sm" id="refreshDevices">Refresh now</button>
+    </div>
+
+    <div class="form-group">
+      <label for="deviceSelect">Cached mower</label>
+      <select id="deviceSelect" class="form-control"></select>
+    </div>
+
+    <div id="deviceSummary" style="display:none;">
+      <div class="device-grid">
+        <div class="device-stat">
+          <span class="label">Status</span>
+          <span class="value" id="statusValue"></span>
+        </div>
+        <div class="device-stat">
+          <span class="label">Battery</span>
+          <span class="value" id="batteryValue"></span>
+        </div>
+        <div class="device-stat">
+          <span class="label">Model</span>
+          <span class="value" id="modelValue"></span>
+        </div>
+        <div class="device-stat">
+          <span class="label">Firmware</span>
+          <span class="value" id="firmwareValue"></span>
+        </div>
+        <div class="device-stat">
+          <span class="label">Signal</span>
+          <span class="value" id="signalValue"></span>
+        </div>
+        <div class="device-stat">
+          <span class="label">Last Seen</span>
+          <span class="value" id="seenValue"></span>
+        </div>
+        <div class="device-stat">
+          <span class="label">Last Command</span>
+          <span class="value" id="commandValue"></span>
+        </div>
+        <div class="device-stat">
+          <span class="label">Command Result</span>
+          <span class="value" id="commandStatusValue"></span>
+        </div>
+      </div>
+
+      <div class="device-table">
+        <table>
+          <tbody>
+            <tr>
+              <th>Accessory</th>
+              <td id="displayNameValue"></td>
+            </tr>
+            <tr>
+              <th>Device ID</th>
+              <td id="deviceIdValue"></td>
+            </tr>
+            <tr>
+              <th>Serial Number</th>
+              <td id="serialValue"></td>
+            </tr>
+            <tr>
+              <th>MAC Address</th>
+              <td id="macValue"></td>
+            </tr>
+            <tr>
+              <th>Last Update Source</th>
+              <td id="sourceValue"></td>
+            </tr>
+            <tr>
+              <th>Reported Timestamp</th>
+              <td id="timestampValue"></td>
+            </tr>
+            <tr id="positionRow">
+              <th>Current Position</th>
+              <td id="positionValue"></td>
+            </tr>
+            <tr id="mowingTimeRow">
+              <th>Mowing Time</th>
+              <td id="mowingTimeValue"></td>
+            </tr>
+            <tr id="totalMowingTimeRow">
+              <th>Total Mowing Time</th>
+              <td id="totalMowingTimeValue"></td>
+            </tr>
+            <tr>
+              <th>Active Error</th>
+              <td id="errorValue"></td>
+            </tr>
+            <tr>
+              <th>Command Sequence</th>
+              <td id="commandSequenceValue"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <p id="noDevicesMessage" class="muted mb-0" style="display:none;">No mowers are available yet. Finish connecting your account, then refresh this page.</p>
+  </section>
+
+  <section id="supportPanel" class="panel support-list">
+    <h3>Help</h3>
+    <p>Navimow for Homebridge lets you see mower status and send start, dock, pause, resume, and stop commands from HomeKit.</p>
+    <p>If something is not working as expected, these links are the best place to start:</p>
+    <ul>
+      <li><a href="https://github.com/LeiterConsulting/navimowhb#readme" target="_blank">Setup and troubleshooting guide</a></li>
+      <li><a href="https://github.com/LeiterConsulting/navimowhb/issues" target="_blank">Report a problem or request a feature</a></li>
+      <li><a href="https://github.com/homebridge/homebridge/wiki" target="_blank">Homebridge documentation</a></li>
+    </ul>
+    <p class="mb-0 muted">Advanced network and callback options are available in Settings. If you need them, the README explains when to use each one.</p>
+  </section>
+</div>
+
+<script>
+  ;(async () => {
+    const setupPanel = document.getElementById('setupPanel')
+    const menu = document.getElementById('menu')
+    const devicesPanel = document.getElementById('devicesPanel')
+    const supportPanel = document.getElementById('supportPanel')
+    const settingsButton = document.getElementById('menuSettings')
+    const devicesButton = document.getElementById('menuDevices')
+    const supportButton = document.getElementById('menuSupport')
+    const deviceSelect = document.getElementById('deviceSelect')
+    const summary = document.getElementById('deviceSummary')
+    const noDevicesMessage = document.getElementById('noDevicesMessage')
+    const refreshDevicesButton = document.getElementById('refreshDevices')
+    const authPrimaryButton = document.getElementById('authPrimary')
+    const authRefreshButton = document.getElementById('authRefresh')
+    const DEVICE_REFRESH_INTERVAL_MS = 5000
+    const browserBaseUrl = window.location.origin
+
+    let deviceAccessories = []
+    let selectedDeviceUuid = null
+    let deviceRefreshTimer = null
+    let authState = null
+    let pluginConfig = null
+    let pendingConfigSaveAfterAuth = false
+
+    const setVisible = (id, visible, display = '') => {
+      const element = document.getElementById(id)
+      if (!element) {
+        return
+      }
+      element.style.display = visible ? display : 'none'
+    }
+
+    const setActiveButton = activeButton => {
+      ;[settingsButton, devicesButton, supportButton].forEach(button => {
+        button.classList.toggle('active', button === activeButton)
+      })
+    }
+
+    const hidePanels = () => {
+      setupPanel.style.display = 'none'
+      devicesPanel.style.display = 'none'
+      supportPanel.style.display = 'none'
+    }
+
+    const stopDevicesRefresh = () => {
+      if (deviceRefreshTimer) {
+        clearInterval(deviceRefreshTimer)
+        deviceRefreshTimer = null
+      }
+    }
+
+    const startDevicesRefresh = () => {
+      stopDevicesRefresh()
+      deviceRefreshTimer = setInterval(() => {
+        if (devicesPanel.style.display !== 'block') {
+          return
+        }
+        renderDevices(false).catch(error => {
+          console.error(error)
+        })
+      }, DEVICE_REFRESH_INTERVAL_MS)
+    }
+
+    const showSettings = () => {
+      stopDevicesRefresh()
+      hidePanels()
+      setActiveButton(settingsButton)
+      homebridge.enableSaveButton?.()
+      homebridge.showSchemaForm()
+      setupPanel.style.display = 'block'
+      refreshAuthStatus(false).catch(error => {
+        homebridge.toast.error(error.message, 'Error')
+      })
+    }
+
+    const showSupport = () => {
+      stopDevicesRefresh()
+      hidePanels()
+      setActiveButton(supportButton)
+      homebridge.disableSaveButton?.()
+      homebridge.hideSchemaForm()
+      supportPanel.style.display = 'block'
+    }
+
+    const statusPill = (online, hasError, state) => {
+      if (hasError) {
+        return '<span class="pill warn">Fault</span>'
+      }
+      if (online === false && !state) {
+        return '<span class="pill warn">Offline</span>'
+      }
+      return '<span class="pill ok">' + (state || 'Ready') + '</span>'
+    }
+
+    const formatSignal = value => {
+      if (value == null || value === '') {
+        return 'N/A'
+      }
+      return String(value)
+    }
+
+    const formatDuration = value => {
+      if (value == null || value === '') {
+        return 'N/A'
+      }
+
+      const totalSeconds = Number(value)
+      if (!Number.isFinite(totalSeconds)) {
+        return String(value)
+      }
+
+      const hours = Math.floor(totalSeconds / 3600)
+      const minutes = Math.floor((totalSeconds % 3600) / 60)
+      const seconds = totalSeconds % 60
+      if (hours > 0) {
+        return `${hours}h ${minutes}m`
+      }
+      if (minutes > 0) {
+        return `${minutes}m ${seconds}s`
+      }
+      return `${seconds}s`
+    }
+
+    const formatPosition = value => {
+      if (!value || typeof value !== 'object') {
+        return null
+      }
+
+      const lat = value.latitude ?? value.lat
+      const lon = value.longitude ?? value.lng ?? value.lon
+      if (lat == null || lon == null) {
+        return JSON.stringify(value)
+      }
+
+      return `${lat}, ${lon}`
+    }
+
+    const formatCommandStatus = result => {
+      if (!result || typeof result !== 'object') {
+        return 'N/A'
+      }
+      return result.status || result.result || 'N/A'
+    }
+
+    const formatCommandName = result => {
+      if (!result || typeof result !== 'object') {
+        return 'N/A'
+      }
+      return result.command || result.cmd || 'N/A'
+    }
+
+    const formatTimestamp = value => {
+      if (!value) {
+        return 'N/A'
+      }
+      const asDate = new Date(Number(value))
+      return Number.isNaN(asDate.getTime()) ? String(value) : asDate.toLocaleString()
+    }
+
+    const getCachedNavimowAccessories = async () => {
+      const cachedAccessories = typeof homebridge.getCachedAccessories === 'function'
+        ? await homebridge.getCachedAccessories()
+        : await homebridge.request('/getCachedAccessories')
+
+      return cachedAccessories
+        .filter(accessory => accessory.context && accessory.context.navimow)
+        .sort((left, right) => left.displayName.localeCompare(right.displayName))
+    }
+
+    const renderAccessory = uuid => {
+      const accessory = deviceAccessories.find(entry => entry.UUID === uuid)
+      if (!accessory) {
+        summary.style.display = 'none'
+        return
+      }
+
+      selectedDeviceUuid = uuid
+      const info = accessory.context.navimow || {}
+      const formattedPosition = formatPosition(info.position)
+      const mowingTime = info.metrics?.mowing_time
+      const totalMowingTime = info.metrics?.total_mowing_time
+
+      document.getElementById('displayNameValue').textContent = accessory.displayName
+      document.getElementById('deviceIdValue').textContent = info.deviceId || 'N/A'
+      document.getElementById('serialValue').textContent = info.serialNumber || 'N/A'
+      document.getElementById('macValue').textContent = info.macAddress || 'N/A'
+      document.getElementById('sourceValue').textContent = info.lastSource || 'N/A'
+      document.getElementById('timestampValue').textContent = formatTimestamp(info.lastUpdatedAt)
+      document.getElementById('batteryValue').textContent = info.battery == null ? 'N/A' : info.battery + '%'
+      document.getElementById('modelValue').textContent = info.model || 'N/A'
+      document.getElementById('firmwareValue').textContent = info.firmwareVersion || 'N/A'
+      document.getElementById('signalValue').textContent = formatSignal(info.signalStrength)
+      document.getElementById('seenValue').textContent = info.lastSource ? 'Updated recently' : 'Saved details only'
+      document.getElementById('commandValue').textContent = formatCommandName(info.rawCommandResult)
+      document.getElementById('commandStatusValue').textContent = formatCommandStatus(info.rawCommandResult)
+      document.getElementById('positionValue').textContent = formattedPosition || ''
+      document.getElementById('mowingTimeValue').textContent = formatDuration(mowingTime)
+      document.getElementById('totalMowingTimeValue').textContent = formatDuration(totalMowingTime)
+      document.getElementById('errorValue').textContent = info.errorMessage || info.errorCode || 'None'
+      document.getElementById('commandSequenceValue').textContent = info.rawCommandResult?.cmdNum || 'N/A'
+      document.getElementById('statusValue').innerHTML = statusPill(info.online, info.hasError, info.state)
+
+      setVisible('positionRow', Boolean(formattedPosition))
+      setVisible('mowingTimeRow', mowingTime != null)
+      setVisible('totalMowingTimeRow', totalMowingTime != null)
+
+      summary.style.display = 'block'
+    }
+
+    const renderDevices = async (showSpinner = true) => {
+      if (showSpinner) {
+        homebridge.showSpinner()
+      }
+
+      try {
+        deviceAccessories = await getCachedNavimowAccessories()
+        deviceSelect.innerHTML = ''
+
+        if (!deviceAccessories.length) {
+          selectedDeviceUuid = null
+          summary.style.display = 'none'
+          noDevicesMessage.style.display = 'block'
+          const option = document.createElement('option')
+          option.text = 'No mowers'
+          deviceSelect.add(option)
+          deviceSelect.disabled = true
+          return
+        }
+
+        noDevicesMessage.style.display = 'none'
+        deviceSelect.disabled = false
+        deviceAccessories.forEach(accessory => {
+          const option = document.createElement('option')
+          option.text = accessory.displayName
+          option.value = accessory.UUID
+          deviceSelect.add(option)
+        })
+
+        if (!selectedDeviceUuid || !deviceAccessories.some(accessory => accessory.UUID === selectedDeviceUuid)) {
+          selectedDeviceUuid = deviceAccessories[0].UUID
+        }
+
+        deviceSelect.value = selectedDeviceUuid
+        renderAccessory(selectedDeviceUuid)
+      } finally {
+        if (showSpinner) {
+          homebridge.hideSpinner()
+        }
+      }
+    }
+
+    const showDevices = async () => {
+      if (authState?.state === 'previous_state') {
+        homebridge.toast.info('These mower details were found from an earlier setup. Reconnect Navimow if you want to refresh the account link.', 'Saved Navimow Data')
+      }
+      hidePanels()
+      setActiveButton(devicesButton)
+      homebridge.disableSaveButton?.()
+      homebridge.hideSchemaForm()
+      devicesPanel.style.display = 'block'
+      await renderDevices(true)
+      startDevicesRefresh()
+    }
+
+    const statusAppearance = state => {
+      switch (state) {
+        case 'connected':
+          return { css: 'ok', label: 'Connected' }
+        case 'waiting':
+          return { css: 'warn', label: 'Sign-In In Progress' }
+        case 'exchanging':
+          return { css: 'warn', label: 'Finishing Sign-In' }
+        case 'error':
+          return { css: 'warn', label: 'Action Needed' }
+        case 'previous_state':
+          return { css: 'warn', label: 'Saved Sign-In Found' }
+        default:
+          return { css: 'warn', label: 'Sign-In Needed' }
+      }
+    }
+
+    const getStoredConfigBlock = async () => {
+      const currentConfig = await homebridge.getPluginConfig()
+      pluginConfig = currentConfig[0] || null
+      return pluginConfig
+    }
+
+    const buildConfigBlock = async () => {
+      const storedConfig = await getStoredConfigBlock()
+      return {
+        name: 'Navimow',
+        platform: 'NavimowPlatform',
+        ...(storedConfig || {}),
+      }
+    }
+
+    const getRequestConfigBlock = async () => {
+      const configBlock = await buildConfigBlock()
+      return {
+        ...configBlock,
+        hasSavedConfig: Boolean(pluginConfig),
+        browserBaseUrl,
+      }
+    }
+
+    const persistConfigBlock = async (saveToDisk = false) => {
+      const configBlock = await buildConfigBlock()
+      await homebridge.updatePluginConfig([configBlock])
+      pluginConfig = configBlock
+      if (saveToDisk) {
+        await homebridge.savePluginConfig()
+      }
+      return configBlock
+    }
+
+    const renderAuthStatus = status => {
+      authState = status
+      const appearance = statusAppearance(status.state)
+      const statePill = document.getElementById('authStatePill')
+      const requiresConfigSave = !status.hasConfig
+      statePill.className = `pill ${appearance.css}`
+      statePill.textContent = appearance.label
+
+      document.getElementById('authStatusLabel').textContent = appearance.label
+      document.getElementById('authMessage').textContent = requiresConfigSave
+        ? `${status.message || 'Connect your Navimow account to finish setting up the plugin.'} Homebridge will save this plugin automatically after sign-in is complete.`
+        : (status.message || 'Connect your Navimow account to finish setting up the plugin.')
+      document.getElementById('redirectUriValue').textContent = status.redirectUri || 'N/A'
+      document.getElementById('tokenPathValue').textContent = status.tokenStoragePath || 'N/A'
+
+      authPrimaryButton.disabled = false
+      if (status.state === 'connected') {
+        authPrimaryButton.textContent = 'Reconnect Navimow'
+      } else if (status.state === 'previous_state') {
+        authPrimaryButton.textContent = status.hasToken
+          ? 'Reconnect Navimow'
+          : 'Connect Navimow'
+      } else if (status.state === 'waiting' || status.state === 'exchanging') {
+        authPrimaryButton.textContent = 'Open Sign-In Page'
+      } else {
+        authPrimaryButton.textContent = 'Connect Navimow'
+      }
+
+      if (status.state === 'previous_state') {
+        noDevicesMessage.textContent = 'Saved mower details were found from an earlier setup. Reconnect your account if you want to refresh them.'
+      } else {
+        noDevicesMessage.textContent = 'No mowers are available yet. Connect your Navimow account, then refresh this page.'
+      }
+
+      homebridge.fixScrollHeight?.()
+    }
+
+    const refreshAuthStatus = async (showSpinner = true) => {
+      if (showSpinner) {
+        homebridge.showSpinner()
+      }
+
+      try {
+        const configBlock = await getRequestConfigBlock()
+        const status = await homebridge.request('/auth/status', { config: configBlock })
+        renderAuthStatus(status)
+      } finally {
+        if (showSpinner) {
+          homebridge.hideSpinner()
+        }
+      }
+    }
+
+    const startAuthFlow = async () => {
+      if (!authState?.hasConfig) {
+        await persistConfigBlock(false)
+        pendingConfigSaveAfterAuth = true
+      }
+
+      const configBlock = await getRequestConfigBlock()
+      const status = (authState && (authState.state === 'waiting' || authState.state === 'exchanging'))
+        ? authState
+        : await homebridge.request('/auth/start', { config: configBlock })
+
+      renderAuthStatus(status)
+      if (status.authorizeUrl) {
+        window.open(status.authorizeUrl, '_blank', 'noopener,noreferrer')
+        homebridge.toast.info('Finish signing in with Navimow in the new tab, then return here.', 'Navimow Sign-In')
+      }
+    }
+
+    try {
+      await getStoredConfigBlock()
+      menu.style.display = 'flex'
+      showSettings()
+
+      homebridge.addEventListener('navimow-auth-state', event => {
+        renderAuthStatus(event.data)
+        if (event.data.state === 'connected') {
+          Promise.resolve().then(async () => {
+            if (pendingConfigSaveAfterAuth) {
+              await homebridge.savePluginConfig()
+              pendingConfigSaveAfterAuth = false
+              await getStoredConfigBlock()
+              await refreshAuthStatus(false)
+              homebridge.toast.success('Your Navimow account is connected and ready to use in Homebridge.', 'Navimow Connected')
+              return
+            }
+
+            homebridge.toast.success('Your Navimow account is connected.', 'Navimow Connected')
+          }).catch(error => {
+            homebridge.toast.error(error.message, 'Save Failed')
+          })
+        }
+      })
+
+      deviceSelect.onchange = event => renderAccessory(event.target.value)
+      refreshDevicesButton.addEventListener('click', () => {
+        renderDevices(true).catch(error => {
+          homebridge.toast.error(error.message, 'Error')
+        })
+      })
+      authPrimaryButton.addEventListener('click', () => {
+        startAuthFlow().catch(error => {
+          homebridge.toast.error(error.message, 'Error')
+        })
+      })
+      authRefreshButton.addEventListener('click', () => {
+        refreshAuthStatus(true).catch(error => {
+          homebridge.toast.error(error.message, 'Error')
+        })
+      })
+      settingsButton.addEventListener('click', showSettings)
+      devicesButton.addEventListener('click', showDevices)
+      supportButton.addEventListener('click', showSupport)
+    } catch (error) {
+      homebridge.toast.error(error.message, 'Error')
+    }
+  })()
+</script>

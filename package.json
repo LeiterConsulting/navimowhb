@@ -1,0 +1,62 @@
+{
+  "name": "homebridge-navimow",
+  "version": "0.1.1",
+  "description": "Homebridge platform plugin for Navimow robotic mowers with HomeKit controls, live telemetry, and a guided OAuth setup flow.",
+  "displayName": "Navimow for Homebridge",
+  "author": {
+    "name": "LeiterConsulting",
+    "url": "https://github.com/LeiterConsulting"
+  },
+  "homepage": "https://github.com/LeiterConsulting/navimowhb#readme",
+  "bugs": {
+    "url": "https://github.com/LeiterConsulting/navimowhb/issues"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LeiterConsulting/navimowhb.git"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "homebridge-ui",
+    "config.schema.json",
+    "README.md",
+    "info.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "prepack": "npm run build",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "homebridge-plugin",
+    "homebridge",
+    "navimow",
+    "segway",
+    "robotic-mower",
+    "homekit",
+    "lawn-mower"
+  ],
+  "engines": {
+    "node": ">=18.20.0",
+    "homebridge": ">=1.8.0"
+  },
+  "peerDependencies": {
+    "homebridge": "^1.8.0"
+  },
+  "dependencies": {
+    "@homebridge/plugin-ui-utils": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.1",
+    "typescript": "^5.8.2"
+  },
+  "homebridge": {
+    "pluginAlias": "NavimowPlatform",
+    "pluginType": "platform",
+    "singular": true
+  }
+}

@@ -8,6 +8,8 @@ __pycache__/
 .eggs/
 dist/
 build/
+node_modules/
+*.tgz
 
 # macOS
 .DS_Store
@@ -24,5 +26,8 @@ build/
 venv/
 env/
 
-# Home Assistant
+# Logs
 *.log
+
+# not in repo
+not_in_repo/

@@ -1,31 +1,36 @@
-# Navimow for Home Assistant
+# Navimow for Homebridge
 
-Monitor and control Navimow robotic mowers in Home Assistant.
+![Navimow icon](https://raw.githubusercontent.com/LeiterConsulting/navimowhb/main/homebridge-ui/public/navimow-icon.svg)
 
-## Features
+Homebridge plugin for viewing and controlling Segway Navimow mowers from HomeKit.
 
-- **Mower control**: Start, pause, resume mowing; send mower to dock
-- **Device monitoring**: Real-time state, battery level sensor, dashboards
-- **Real-time communication**: MQTT-based, fast state updates
-- **Native integration**: `lawn_mower` entity, full automation support
+## What it provides
 
-## Prerequisites
+- HomeKit mower controls through Homebridge
+- built-in Navimow sign-in flow from the Homebridge UI
+- direct cloud polling and command handling inside the plugin
+- HomeKit battery service plus richer mower details in the custom plugin page
 
-- Home Assistant **2026.1.0** or newer
-- Navimow account that can sign in to the official app (used for authorization)
+## Runtime requirements
 
-## Installation
+- Homebridge 1.8+
+- Node.js 18, 20, 22, or 24
 
-1. HACS → Integrations → menu → **Custom repositories**
-2. Add: `https://github.com/segwaynavimow/NavimowHA`, Category: **Integration**
-3. Search **Navimow** in HACS and install
-4. Restart Home Assistant
-5. Settings → Devices & Services → Add Integration → search **Navimow**
+## Setup summary
+
+1. Build or install the Homebridge plugin.
+2. Open the plugin settings page in Homebridge.
+3. Complete the built-in Navimow sign-in flow.
+4. Let the browser return to Homebridge and finish connecting.
 
 ## Documentation
 
-Full documentation and troubleshooting: [README](https://github.com/segwaynavimow/NavimowHA) · [Getting Started](https://github.com/segwaynavimow/NavimowHA/wiki/Getting-Started) · [Issues](https://github.com/segwaynavimow/NavimowHA/issues)
+See the local `README.md` in this repository for installation, advanced callback settings, sign-in help, and troubleshooting details.
+
+Repository: https://github.com/LeiterConsulting/navimowhb
+
+Issues: https://github.com/LeiterConsulting/navimowhb/issues
 
 ---
 
-*This integration is under active development. More features are being added over time.*
+For advanced network or callback setup questions, use the README and issue tracker links above.

@@ -1,158 +1,170 @@
-# Navimow for Home Assistant
+# Navimow for Homebridge
 
-<p align="center">
-  <img src="https://fra-navimow-prod.s3.eu-central-1.amazonaws.com/img/navimowhomeassistant.png" width="600">
-</p>
+![Navimow icon](https://raw.githubusercontent.com/LeiterConsulting/navimowhb/main/homebridge-ui/public/navimow-icon.svg)
 
-Monitor and control Navimow robotic mowers in Home Assistant.
+See and control your Segway Navimow mowers from Homebridge and HomeKit.
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=segwaynavimow&repository=NavimowHA&category=Integration)
+Navimow for Homebridge connects your mower account to Homebridge so you can view status, battery level, and send key mower commands from the Home app.
 
-## Features ✨
+## Features
 
-### Mower Control
+### Mower control
 
-Control your mower directly from Home Assistant:
+Control each mower from HomeKit with:
 
-* Start mowing
-* Pause mowing
-* Resume mowing
-* Send mower to dock
+* `Mowing` switch for start, pause, and resume
+* `Dock` switch for return-to-base
+* `Stop` switch for immediate stop
 
-### Device Monitoring
+### Mower status
 
-Keep track of mower status and health:
+View live mower details in Homebridge:
 
-* Real-time mower state
-* Battery level sensor
-* Integration with Home Assistant dashboards
+* scheduled cloud refreshes for mower status
+* battery level in HomeKit
+* command confirmation in the plugin UI
+* richer diagnostics and mower metadata in the custom Homebridge page
 
-### Real-Time Communication
+### Built for simple installs
 
-* **MQTT-based real-time communication**
-* Fast state updates and reliable device synchronization
+The plugin runs directly inside Homebridge:
 
-### Native Home Assistant Integration
+* TypeScript Homebridge dynamic platform in `src/`
+* direct Navimow cloud access from the plugin process
+* local OAuth callback hosted on the Homebridge machine
+* token refresh and device polling managed inside the plugin
 
-* Native **`lawn_mower` entity**
-* Fully compatible with **Home Assistant automations**
-* Device and entity model aligned with HA standards
+## Requirements
 
-### Continuous Development
+* Homebridge 1.8 or newer
+* Node.js version supported by Homebridge: 18, 20, 22, or 24
+* A Navimow account that can sign in to the official mobile app
 
-This integration is **under active development**.
+## Install For Development
 
-**More features are being added all the time**, including additional sensors, diagnostics, and deeper Home Assistant automation support.
+Install Node dependencies:
 
-## Prerequisites 📋
+```bash
+npm install
+```
 
-- **Warning**: Home Assistant minimum version **2026.1.0**
-- **Account**: your Navimow account can sign in to the official app (used for authorization)
+Build the plugin:
 
-## Installation 🛠️
+```bash
+npm run build
+```
 
-This integration is not in the default HACS store. You must add it as a custom repository.
+Package it for installation into another Homebridge host:
 
-This integration will be installed as a custom repository in HACS:
+```bash
+npm pack
+```
 
-1. HACS → Integrations → top-right menu → **Custom repositories**
-2. Repository: `https://github.com/segwaynavimow/NavimowHA`
-3. Category: Integration
-4. Search for `Navimow` in HACS and install it
-5. Restart Home Assistant
-6. Settings → Devices & Services → Add Integration → search `Navimow`
+Prepare and validate an npm release locally:
 
-## Usage 🎮
+```bash
+npm publish --dry-run
+```
 
-See the [Getting Started](https://github.com/segwaynavimow/NavimowHA/wiki/Getting-Started).
+## Project Links
 
-Once the integration is set up, you can control and monitor your Navimow mower using Home Assistant! 🎉
+* Repository: https://github.com/LeiterConsulting/navimowhb
+* Issues: https://github.com/LeiterConsulting/navimowhb/issues
+* Release checklist: `PUBLISHING.md`
 
-After setup, you should see:
+## Homebridge Configuration
 
-- A `lawn_mower` entity (start/pause/dock/resume)
-- A battery `sensor`
+The plugin includes a Homebridge settings form and a custom setup page, so most people can complete setup entirely from the Homebridge web interface.
 
-## Troubleshooting 🔧
+Example `config.json` platform entry:
 
-If you encounter any issues with the Navimow integration, please check the Home Assistant logs for error messages. You can also try the following steps:
+```json
+{
+  "platform": "NavimowPlatform",
+  "name": "Navimow",
+  "authCallbackPort": 47129,
+  "authCallbackHost": "192.168.1.71",
+  "updateIntervalSeconds": 30
+}
+```
 
-- Ensure that your mower is connected to your home network and accessible from Home Assistant.
-- Restart Home Assistant and check if the issue persists.
-- Make sure you are not blocking network access to services in China (if applicable to your environment).
-- If you are using DNS filtering/ad-blocking, try disabling it temporarily.
+Configuration fields:
 
-If the problem continues, please file an issue on GitHub and include relevant log snippets:
+* `authCallbackPort`: local HTTP port used for the OAuth callback
+* `authCallbackHost`: optional LAN hostname or IP used instead of `127.0.0.1`
+* `authCallbackBaseUrl`: optional full callback base URL override
+* `tokenStoragePath`: optional override for persisted OAuth tokens
+* `updateIntervalSeconds`: cloud refresh interval for mower state and command follow-up
 
-- `https://github.com/segwaynavimow/NavimowHA/issues`
+### Advanced sign-in and network settings
 
-## Navimow SDK Library 📚
+Most setups do not need any changes to the callback settings.
 
-This integration uses `navimow-sdk` to communicate with Navimow mowers. `navimow-sdk` provides the Python API used by this integration (details will be expanded in the SDK documentation).
+You may need the advanced settings only when:
 
-## Core plugin pieces to reuse for a Homebridge port 🔌
+* the sign-in page opens on a different device than the Homebridge server
+* the browser cannot return to Homebridge after Navimow sign-in
+* another service is already using the default callback port
 
-If we want to port this integration to Homebridge, the current Home Assistant plugin already gives us a clear platform-agnostic core:
+If that happens:
 
-### Reusable core logic
+* `authCallbackHost` lets you tell Navimow to return to your Homebridge server's LAN IP or hostname
+* `authCallbackBaseUrl` lets you provide a full custom return URL for more complex network setups
+* `authCallbackPort` lets you change the default callback port if needed
 
-1. **Authentication and API session bootstrap**
-   - `custom_components/navimow/config_flow.py`
-   - `custom_components/navimow/auth.py`
-   - `custom_components/navimow/__init__.py`
-   - Handles OAuth2 token acquisition/refresh and creates the authenticated `MowerAPI` client.
+## First Login
 
-2. **Device discovery**
-   - `custom_components/navimow/__init__.py`
-   - Calls `api.async_get_devices()` to discover mowers tied to the authenticated account.
+On first launch, open the plugin settings page in Homebridge and use the built-in connect flow.
 
-3. **Real-time connectivity**
-   - `custom_components/navimow/__init__.py`
-   - Calls `api.async_get_mqtt_user_info()` and builds the `NavimowSDK` MQTT/WebSocket connection used for live mower updates.
+1. Open the Navimow plugin settings page in Homebridge.
+2. Sign in with your Navimow account.
+3. Allow the browser to redirect back to the callback URL on the Homebridge host.
+4. The plugin saves your login and begins mower discovery.
 
-4. **Device state aggregation**
-   - `custom_components/navimow/coordinator.py`
-   - Combines:
-     - MQTT push updates
-     - SDK cached state/attributes
-     - HTTP fallback when MQTT data becomes stale
-   - Produces a normalized runtime data shape containing `device`, `state`, `attributes`, and update metadata.
+If the browser cannot return to the Homebridge callback page, review the advanced sign-in settings above.
 
-5. **Command execution**
-   - `custom_components/navimow/lawn_mower.py`
-   - Uses `api.async_send_command(...)` for the mower actions we would also need in Homebridge:
-     - `START`
-     - `PAUSE`
-     - `RESUME`
-     - `DOCK`
+## HomeKit Mapping
 
-6. **Simple telemetry extraction**
-   - `custom_components/navimow/sensor.py`
-   - Demonstrates how battery data is read from the shared coordinator state and exposed as a platform entity.
+Each discovered mower is exposed as:
 
-### Home Assistant-specific wrapper layer
+* `Mowing` switch
+* `Dock` switch
+* `Stop` switch
+* HomeKit battery service
 
-These parts are useful as references, but would need to be replaced by Homebridge-specific equivalents:
+Command behavior:
 
-- Home Assistant config entry lifecycle in `custom_components/navimow/__init__.py`
-- Home Assistant OAuth flow wiring in `custom_components/navimow/config_flow.py`
-- Home Assistant `lawn_mower` entity implementation in `custom_components/navimow/lawn_mower.py`
-- Home Assistant sensor entity implementation in `custom_components/navimow/sensor.py`
+* turning `Mowing` on sends `start` or `resume`
+* turning `Mowing` off sends `pause`
+* turning `Dock` on sends `dock` and then resets the switch
+* turning `Stop` on sends `stop` and then resets the switch
 
-### Suggested extraction boundary
+The custom Homebridge page also shows richer mower details than the Home app, including last command, command result, battery details, signal strength, and mower metrics when Navimow reports them.
 
-The best first step for a Homebridge port is to treat the following as the shared integration core:
+## Repository Layout
 
-- OAuth token handling
-- `MowerAPI` client creation
-- device discovery
-- MQTT/WebSocket connection setup through `NavimowSDK`
-- merged mower state model
-- mower command methods
+Key paths in this repository:
 
-Then keep only the entity/accessory presentation layer platform-specific:
+* `src/`: Homebridge platform, accessories, and bridge client
+* `homebridge-ui/`: custom Homebridge plugin UI
+* `config.schema.json`: Homebridge form schema
 
-- **Home Assistant:** entities, config entry lifecycle, coordinator wiring
-- **Homebridge:** accessories/services/characteristics, Homebridge auth/session wiring
+## Troubleshooting
 
-In short: the reusable core is the Navimow cloud login, device discovery, MQTT state pipeline, normalized mower state, and mower command execution. The Home Assistant entities are mostly an adapter around that core.
+Check the Homebridge logs first. Most connection problems come from one of these conditions:
+
+* the sign-in return address points to an address the browser cannot reach
+* the saved token is missing, expired, or unreadable
+* the Navimow cloud API response changed from the current plugin expectations
+* the host is running a Node.js version unsupported by Homebridge
+
+Useful log lines to capture when diagnosing issues:
+
+* login callback result
+* discovery startup messages
+* command failures
+* cloud refresh warnings
+
+## Notes
+
+If you run into a setup problem, include the Homebridge logs and the callback address shown in the plugin settings page when opening an issue.
